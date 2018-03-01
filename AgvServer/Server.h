@@ -37,13 +37,13 @@ public:
 	template <typename T>
 	void RunTask(T task)
 	{
-		m_task_pool.schedule(task);
+		m_task_pool.submit(task);
 	}
 
 	template <typename T>
 	void RunPackTask(T task)
 	{
-		m_pack_pool.schedule(task);
+		m_pack_pool.submit(task);
 	}
 private:
 	Server();
