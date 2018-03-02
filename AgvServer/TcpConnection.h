@@ -17,45 +17,52 @@ TCPConnection管理一个client连接
 class TcpConnection : public std::enable_shared_from_this<TcpConnection>
 {
 public:
-	typedef boost::shared_ptr<TcpConnection> Pointer;
+	typedef std::shared_ptr<TcpConnection> Pointer;
 	TcpConnection(tcp::socket socket);
 	~TcpConnection();
 
-	void write_all(Client_Msg msg);
+	void write_all(Client_Response_Msg msg);
 
 	void start();
 
 	tcp::socket& socket() { return m_socket; }
 
-	void setIsLogin(bool b)
+	void setId(int id)
 	{
-		_isLogin = b;
+		_id = id;
+	}
+
+	int getId()
+	{
+		return _id;
 	}
 
 protected:
-	void  _push(Client_Msg msg);
+	void  _push(Client_Response_Msg msg);
 	void  _write_head();
+	void  _write_return_head();
 	void  _write_body();
-	void  _clear_queue(boost::lockfree::queue<Client_Msg> &queue);
+	void  _clear_queue(boost::lockfree::queue<Client_Response_Msg> &queue);
 private:
-	Client_Msg read_one_msg;//读取一条消息的缓存
-	char read_head_buffer[sizeof(Client_Msg_Head)];
-	char read_body_buffer[sizeof(Client_Msg_Body)];
 
-	Client_Msg write_one_msg;
-
+	//////////读取
+	Client_Request_Msg read_one_msg;//读取一条消息的缓存
+	char read_head_buffer[sizeof(Client_Common_Head)];
+	char read_body_buffer[sizeof(Client_Common_Body)];
 	void read_header();
-
 	void read_body();
 
 	tcp::socket m_socket;
 
-	boost::lockfree::queue<Client_Msg>     m_queue;//发送队列
+	//写入
+	Client_Response_Msg write_one_msg;
+	boost::lockfree::queue<Client_Response_Msg>     m_queue;//发送队列
+
 	boost::atomic_bool                  _isWriting;
 	boost::atomic_bool                  _isClosed;
 	boost::atomic_uint32_t              _push_times;
 	boost::atomic_uint32_t              _pop_times;
-	boost::atomic_bool                  _isLogin;//是否已经登录
+	boost::atomic_uint32_t              _id;//标记当前用户ID。如果<=0,那么就是未登录
 
 	int getSendQueueLength() const
 	{

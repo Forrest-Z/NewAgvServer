@@ -1,16 +1,17 @@
 #include "TcpConnection.h"
 #include "Server.h"
+#include "SessionManager.h"
 #include <iostream>
 
 TcpConnection::TcpConnection(tcp::socket socket)
 	:m_socket(std::move(socket)),
-	m_queue(1024)
+	m_queue(5)
 {
 	_isWriting = false;
 	_isClosed = false;
 	_push_times = 0;
 	_pop_times = 0;
-	_isLogin = false;
+	
 }
 
 TcpConnection::~TcpConnection()
@@ -20,29 +21,20 @@ TcpConnection::~TcpConnection()
 
 void TcpConnection::start()
 {
+	_id = SessionManager::Instance()->getUnloginId();
+	SessionManager::Instance()->SaveSession(shared_from_this(), _id);
 	read_header();
 }
 
-void TcpConnection::_clear_queue(boost::lockfree::queue<Client_Msg> &queue)
+void TcpConnection::_clear_queue(boost::lockfree::queue<Client_Response_Msg> &queue)
 {
-	Client_Msg buf;
+	Client_Response_Msg buf;
 	while (queue.pop(buf));
 }
 
-void TcpConnection::_push(Client_Msg msg)
+void TcpConnection::_push(Client_Response_Msg msg)
 {
 	size_t  tms = 0;
-
-	while (getSendQueueLength() > 100)
-	{
-		std::this_thread::sleep_for(std::chrono::microseconds(1000));
-		tms++;
-		if (tms >= 1000)
-		{
-			break;
-		}
-	}
-
 	m_queue.push(msg);
 	_push_times += 1;
 
@@ -67,12 +59,30 @@ void TcpConnection::_write_head()
 	_isWriting = true;
 
 	boost::asio::async_write(m_socket,
-		boost::asio::buffer(&(write_one_msg.header), sizeof(Client_Msg_Head)),
+		boost::asio::buffer(&(write_one_msg.head), sizeof(Client_Common_Head)),
 		[this, self](boost::system::error_code ec, std::size_t /*length*/)
 	{
 		if (!ec)
 		{
-			if (write_one_msg.header.body_length > 0) {
+			_write_return_head();
+		}
+		else {
+			_isWriting = false;
+		}
+	});
+}
+
+void TcpConnection::_write_return_head()
+{
+	auto self(shared_from_this());
+	boost::asio::async_write(m_socket,
+		boost::asio::buffer(&(write_one_msg.return_head), sizeof(CLIENT_RETURN_MSG_HEAD)),
+		[this, self](boost::system::error_code ec, std::size_t /*length*/)
+	{
+		if (!ec)
+		{
+			if (write_one_msg.head.body_length > 0)
+			{
 				_write_body();
 			}
 			else {
@@ -89,7 +99,7 @@ void TcpConnection::_write_body()
 {
 	auto self(shared_from_this());
 	boost::asio::async_write(m_socket,
-		boost::asio::buffer(&(write_one_msg.body), write_one_msg.header.body_length),
+		boost::asio::buffer(&(write_one_msg.body), write_one_msg.head.body_length),
 		[this, self](boost::system::error_code ec, std::size_t /*length*/)
 	{
 		if (!ec)
@@ -102,7 +112,7 @@ void TcpConnection::_write_body()
 	});
 }
 
-void TcpConnection::write_all(Client_Msg msg)
+void TcpConnection::write_all(Client_Response_Msg msg)
 {
 	if (_isClosed)
 	{
@@ -119,16 +129,16 @@ void TcpConnection::read_header()
 {
 	auto self(shared_from_this());
 	boost::asio::async_read(m_socket,
-		boost::asio::buffer(read_head_buffer, sizeof(Client_Msg_Head)),
+		boost::asio::buffer(read_head_buffer, sizeof(Client_Common_Head)),
 		[this, self](boost::system::error_code ec, std::size_t size)
 	{
 		if (!ec)
 		{
-			memcpy(&(read_one_msg.header), read_head_buffer, sizeof(Client_Msg_Head));
-			if (read_one_msg.header.body_length > 0 ){
-				if (read_one_msg.header.body_length <= TCP_ONE_MSG_MAX_SIZE
-					&& read_one_msg.header.head == TCP_ONE_MSG_HEAD_HEAD
-					&& read_one_msg.header.tail == TCP_ONE_MSG_HEAD_TAIL) 
+			memcpy(&(read_one_msg.head), read_head_buffer, sizeof(Client_Common_Head));
+			if (read_one_msg.head.body_length > 0 ){
+				if (read_one_msg.head.body_length <= CLIENT_MSG_REQUEST_BODY_MAX_SIZE
+					&& read_one_msg.head.head == CLIENT_COMMON_HEAD_HEAD
+					&& read_one_msg.head.tail == CLIENT_COMMON_HEAD_TAIL) 
 				{
 					read_body();
 				}
@@ -137,16 +147,18 @@ void TcpConnection::read_header()
 				}
 			}
 			else {
+				read_one_msg.id = _id;
 				Server::GetInstance()->pushPackage(read_one_msg);
 				read_header();
 			}
 		}
 		else
 		{
-			//TODO:掉线
+			//掉线
 			_isClosed = true;
 			std::cout << "socket closed!" << std::endl;
-			//Server::GetInstance()->GetPlayerLogin()->SavePlayerOfflineData(shared_from_this());
+			//TODO:
+			SessionManager::Instance()->RemoveSession(shared_from_this());
 			m_socket.close();
 		}
 	});
@@ -156,22 +168,24 @@ void TcpConnection::read_body()
 {
 	auto self(shared_from_this());
 	boost::asio::async_read(m_socket,
-		boost::asio::buffer(read_body_buffer, read_one_msg.header.body_length),
+		boost::asio::buffer(read_body_buffer, read_one_msg.head.body_length),
 		[this, self](boost::system::error_code ec, std::size_t size)
 	{
 		if (!ec)
 		{
 			memcpy(read_one_msg.body.data, read_body_buffer, size);
 			read_one_msg.body.length = size;
+			read_one_msg.id = _id;
 			Server::GetInstance()->pushPackage(read_one_msg);
 			read_header();
 		}
 		else
 		{
-			//TODO:掉线
+			//掉线
 			_isClosed = true;
 			std::cout << "socket closed!" << std::endl;
-			//Server::GetInstance()->GetPlayerLogin()->SavePlayerOfflineData(shared_from_this());
+			//TODO:
+			SessionManager::Instance()->RemoveSession(shared_from_this());
 			m_socket.close();
 		}
 	});

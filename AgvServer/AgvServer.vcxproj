@@ -77,8 +77,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>D:\thirdparty\boost\install\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\thirdparty\boost\install\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\thirdparty\boost\install\include;D:\Qt\Qt5.9.2\5.9.2\msvc2017_64\include\QtCore;D:\Qt\Qt5.9.2\5.9.2\msvc2017_64\include\QtSql;D:\Qt\Qt5.9.2\5.9.2\msvc2017_64\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\thirdparty\boost\install\lib;D:\Qt\Qt5.9.2\5.9.2\msvc2017_64\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -112,6 +112,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Qt5Cored.lib;Qt5Sqld.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -151,6 +152,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DBManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MsgProcessor.cpp" />
     <ClCompile Include="Server.cpp" />
@@ -158,8 +160,11 @@
     <ClCompile Include="SessionManager.cpp" />
     <ClCompile Include="TcpConnection.cpp" />
     <ClCompile Include="TcpServer.cpp" />
+    <ClCompile Include="UserManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Common.h" />
+    <ClInclude Include="DBManager.h" />
     <ClInclude Include="MsgProcessor.h" />
     <ClInclude Include="Protocol.h" />
     <ClInclude Include="Server.h" />
@@ -167,6 +172,7 @@
     <ClInclude Include="SessionManager.h" />
     <ClInclude Include="TcpConnection.h" />
     <ClInclude Include="TcpServer.h" />
+    <ClInclude Include="UserManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

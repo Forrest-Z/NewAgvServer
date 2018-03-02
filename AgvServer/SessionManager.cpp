@@ -1,8 +1,9 @@
 #include "SessionManager.h"
 
 SessionManager::SessionManager() :
-	m_sessions(new SessionMap()),
-	m_idSock(new _umap_idSock())
+	m_sessions(new MapConnSession()),
+	m_idSock(new MapIdConn()),
+	m_unlogin_id(-1)
 {
 }
 

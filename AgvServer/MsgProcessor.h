@@ -2,5 +2,5 @@
 
 #include "TcpConnection.h"
 
-void MsgProcess(TcpConnection::Pointer conn, Client_Msg msg);
+void MsgProcess(TcpConnection::Pointer conn, Client_Request_Msg msg);
 

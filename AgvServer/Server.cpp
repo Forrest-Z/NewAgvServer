@@ -8,7 +8,7 @@ Server *Server::m_instance = NULL;
 Server::Server() :
 	m_task_pool(std::thread::hardware_concurrency() * 16),
 	m_pack_pool(5),
-	m_package(new boost::lockfree::queue<Client_Msg>(PackageCount))
+	m_package(new boost::lockfree::queue<Client_Request_Msg>(PackageCount))
 {
 }
 
@@ -35,12 +35,8 @@ bool Server::initSql()
 bool Server::initAll()
 {
 	Server  *srv = Server::GetInstance();
-	//4个线程并发处理消息
-	srv->RunTask(boost::bind(&Server::PopPackage, srv));
-	srv->RunTask(boost::bind(&Server::PopPackage, srv));
-	srv->RunTask(boost::bind(&Server::PopPackage, srv));
-	srv->RunTask(boost::bind(&Server::PopPackage, srv));
 
+	srv->RunTask(boost::bind(&Server::PopPackage, srv));
 
 	srv->RunTask(boost::bind(&Server::publisher_agv_position, srv));
 	srv->RunTask(boost::bind(&Server::publisher_agv_status, srv));
@@ -60,7 +56,7 @@ void Server::initListen()
 	io_context.run();
 }
 
-void Server::pushPackage(Client_Msg package)
+void Server::pushPackage(Client_Request_Msg package)
 {
 	_push_times += 1;
 	uint16_t t = 0;
@@ -79,14 +75,14 @@ void Server::pushPackage(Client_Msg package)
 
 void Server::PopPackage()
 {
-	Client_Msg pack;
-	SessionManager::umap_idSock t_roleSock = SessionManager::Instance()->getIdSock();
+	Client_Request_Msg pack;
+	SessionManager::MapIdConnSession t_roleSock = SessionManager::Instance()->getIdSock();
 	while (1)
 	{
 		if (m_package->pop(pack))
 		{
 			_pop_times += 1;
-			TcpConnection::Pointer conn = (*t_roleSock)[pack.user_id];
+			TcpConnection::Pointer conn = (*t_roleSock)[pack.id];
 			if (conn == NULL)
 			{
 				std::this_thread::sleep_for(std::chrono::microseconds(1));
@@ -94,7 +90,6 @@ void Server::PopPackage()
 			}
 			else
 			{
-				//CommandParse(conn, pack.data);
 				RunPackTask(boost::bind(&MsgProcess, conn, pack));
 			}
 		}

@@ -25,7 +25,7 @@ public:
 	void initListen();
 
 
-	void pushPackage(Client_Msg package);
+	void pushPackage(Client_Request_Msg package);
 
 	void PopPackage();
 
@@ -57,7 +57,7 @@ private:
 	boost::basic_thread_pool m_pack_pool;
 
 	//消息队列
-	boost::lockfree::queue<Client_Msg> *m_package;
+	boost::lockfree::queue<Client_Request_Msg> *m_package;
 
 	int         getQueueLength() const
 	{
