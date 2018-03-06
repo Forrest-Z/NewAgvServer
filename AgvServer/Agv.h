@@ -4,7 +4,7 @@
 #include "AgvCmdQueue.h"
 #include "Common.h"
 
-class Agv : public boost::enable_shared_from_this<AgvConnection>
+class Agv : public boost::enable_shared_from_this<Agv>
 {
 public:
 	typedef boost::shared_ptr<Agv> Pointer;
