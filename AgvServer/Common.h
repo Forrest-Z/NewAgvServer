@@ -23,16 +23,18 @@ typedef struct _AGV_BASE_INFO
 //AGV位置信息
 typedef struct _AGV_POSITION_INFO
 {
-	int32_t id;
 	int32_t x;
 	int32_t y;
 	int32_t rotation;
 }AGV_POSITION_INFO;
 
 //AGV状态信息
+enum {
+	AGV_MODE_AUTO = 0,//自动模式
+	AGV_MODE_HAND = 1//手动模式
+};
 typedef struct _AGV_STATUS_INFO
 {
-	int32_t id;
 	int32_t mileage;
 	int32_t currentRfid;
 	int32_t nextRfid;
@@ -92,3 +94,12 @@ typedef struct _AGV_ARC
 	float p2x;
 	float p2y;
 }AGV_ARC;
+
+
+unsigned char checkSum(unsigned char *data, int len);
+
+int getInt32FromByte(char *data);
+
+uint16_t getInt16FromByte(char *data);
+
+uint8_t getInt8FromByte(char *data);

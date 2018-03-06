@@ -14,10 +14,10 @@ using  boost::asio::ip::tcp;
 /*
 TCPConnection管理一个client连接
 */
-class TcpConnection : public std::enable_shared_from_this<TcpConnection>
+class TcpConnection : public boost::enable_shared_from_this<TcpConnection>
 {
 public:
-	typedef std::shared_ptr<TcpConnection> Pointer;
+	typedef boost::shared_ptr<TcpConnection> Pointer;
 	TcpConnection(tcp::socket socket);
 	~TcpConnection();
 

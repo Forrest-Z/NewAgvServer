@@ -102,21 +102,33 @@ void Server::PopPackage()
 
 void Server::publisher_agv_position()
 {
+	while (true)
+	{
 
+	}
 }
 
 void Server::publisher_agv_status()
 {
+	while (true)
+	{
 
+	}
 }
 
 void Server::publisher_task()
 {
+	while (true)
+	{
 
+	}
 }
 
 void Server::publisher_log()
 {
+	while (true)
+	{
 
+	}
 }
 

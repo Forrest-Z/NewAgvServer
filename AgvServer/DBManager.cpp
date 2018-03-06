@@ -165,6 +165,7 @@ bool DBManager::checkTables()
 		bool b = exeSql(createSql, args);
 		if (!b)return false;
 	}
+	qDebug() << "check tables OK";
 	return true;
 }
 
@@ -188,11 +189,14 @@ bool DBManager::createConnection()
 		database.setPassword("6980103");
 	}
 
-	if (!database.isValid())return false;
+	if (!database.isValid())
+	{
+		return false;
+	}
 
 	if (!database.open())
 	{
-		//g_log->log(AGV_LOG_LEVEL_ERROR, QString("Error: Failed to connect database.") + database.lastError().text());
+		qDebug() << "database open fail:" << database.lastError();
 		return false;
 	}
 	return checkTables();
