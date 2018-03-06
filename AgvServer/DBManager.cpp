@@ -1,4 +1,8 @@
 #include "DBManager.h"
+#include <QSqlQuery>
+#include <QDebug>
+#include <QSqlError>
+#include <QSqlRecord>
 
 
 DBManager::DBManager()
@@ -188,7 +192,7 @@ bool DBManager::createConnection()
 
 	if (!database.open())
 	{
-		g_log->log(AGV_LOG_LEVEL_ERROR, QString("Error: Failed to connect database.") + database.lastError().text());
+		//g_log->log(AGV_LOG_LEVEL_ERROR, QString("Error: Failed to connect database.") + database.lastError().text());
 		return false;
 	}
 	return checkTables();
@@ -205,7 +209,8 @@ bool DBManager::closeConnection()
 bool DBManager::exeSql(QString esql, QList<QVariant> args)
 {
 	if (!esql.contains("agv_log") && !esql.contains("insert into"))//防止形成自循环
-		g_log->log(AGV_LOG_LEVEL_DEBUG, "exeSql=" + esql);
+		return false;
+		//g_log->log(AGV_LOG_LEVEL_DEBUG, "exeSql=" + esql);
 	mutex.lock();
 	QSqlQuery sql_query(database);
 	sql_query.prepare(esql);
