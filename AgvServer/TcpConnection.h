@@ -47,8 +47,6 @@ private:
 
 	//////////读取
 	Client_Request_Msg read_one_msg;//读取一条消息的缓存
-	char read_head_buffer[sizeof(Client_Common_Head)];
-	char read_body_buffer[sizeof(Client_Common_Body)];
 	void read_header();
 	void read_body();
 
@@ -60,9 +58,9 @@ private:
 
 	boost::atomic_bool                  _isWriting;
 	boost::atomic_bool                  _isClosed;
-	boost::atomic_uint32_t              _push_times;
-	boost::atomic_uint32_t              _pop_times;
-	boost::atomic_uint32_t              _id;//标记当前用户ID。如果<=0,那么就是未登录
+	boost::atomic_int32_t              _push_times;
+	boost::atomic_int32_t              _pop_times;
+	boost::atomic_int32_t              _id;//标记当前用户ID。如果<=0,那么就是未登录
 
 	int getSendQueueLength() const
 	{

@@ -11,15 +11,17 @@
 
 using boost::asio::ip::tcp;
 
+typedef std::function<void(char *data, int len)> AgvConnectionOnReadPackage;
 class AgvConnection : public boost::enable_shared_from_this<AgvConnection>
 {
 public:
 	typedef boost::shared_ptr<AgvConnection> Pointer;
-	AgvConnection(int _id,std::string ip, int port);
+	AgvConnection(int _id,std::string ip, int port, AgvConnectionOnReadPackage _onReadPack);
 	virtual ~AgvConnection();
 	//不起线程和缓存因为要求速度高
 	void doSend(char *data, int len);
 private:
+	void reConnect();
 	void doConnect();
 	void do_read_header();
 
@@ -35,5 +37,7 @@ private:
 	std::string ip;
 	int port;
 	int id;
+
+	AgvConnectionOnReadPackage onReadPackage;
 };
 

@@ -3,10 +3,11 @@
 #include <iostream>
 
 
-AgvConnection::AgvConnection(int _id,std::string _ip, int _port) :
+AgvConnection::AgvConnection(int _id, std::string _ip, int _port, AgvConnectionOnReadPackage _onReadPack) :
 	id(_id),
 	ip(_ip),
-	port(_port)
+	port(_port),
+	onReadPackage(_onReadPack)
 {
 	std::thread([this]()
 	{
@@ -43,6 +44,22 @@ void AgvConnection::doSend(char *data, int len)
 		});
 	}
 }
+
+void AgvConnection::reConnect()
+{
+	io_context_p->stop();
+	if (socket_p->is_open())
+		socket_p->close();
+	std::thread([this]()
+	{
+		io_context_p.reset(new boost::asio::io_context());
+		socket_p.reset(new tcp::socket(*io_context_p));
+		ep_p.reset(new tcp::endpoint(boost::asio::ip::address::from_string(ip), port));
+		doConnect();
+		io_context_p->run();
+	}).detach();
+}
+
 
 void AgvConnection::doConnect()
 {
@@ -81,7 +98,7 @@ void AgvConnection::do_read_header()
 		else
 		{
 			socket_p->close();
-			//TODO:onclose();
+			reConnect();
 		}
 	});
 }
@@ -89,13 +106,14 @@ void AgvConnection::do_read_header()
 void AgvConnection::do_read_body()
 {
 	boost::asio::async_read(*socket_p,
-		boost::asio::buffer(readbuff + 2, readpacklen-2),
+		boost::asio::buffer(readbuff + 2, readpacklen - 2),
 		[this](boost::system::error_code ec, std::size_t /*length*/)
 	{
 		if (!ec)
 		{
 			//TODO:处理
-
+			if (onReadPackage)
+				onReadPackage(readbuff, readpacklen + 1);
 			//继续读取
 			do_read_header();
 		}
@@ -103,6 +121,7 @@ void AgvConnection::do_read_body()
 		{
 			socket_p->close();
 			//TODO:onclose();
+			reConnect();
 		}
 	});
 }

@@ -21,8 +21,7 @@ TcpConnection::~TcpConnection()
 
 void TcpConnection::start()
 {
-	_id = SessionManager::Instance()->getUnloginId();
-	SessionManager::Instance()->SaveSession(shared_from_this(), _id);
+	std::cout << "new connect from" << m_socket.remote_endpoint().address().to_string()<<std::endl;
 	read_header();
 }
 
@@ -129,12 +128,11 @@ void TcpConnection::read_header()
 {
 	auto self(shared_from_this());
 	boost::asio::async_read(m_socket,
-		boost::asio::buffer(read_head_buffer, sizeof(Client_Common_Head)),
+		boost::asio::buffer(&read_one_msg.head, sizeof(Client_Common_Head)),
 		[this, self](boost::system::error_code ec, std::size_t size)
 	{
 		if (!ec)
 		{
-			memcpy(&(read_one_msg.head), read_head_buffer, sizeof(Client_Common_Head));
 			if (read_one_msg.head.body_length > 0 ){
 				if (read_one_msg.head.body_length <= CLIENT_MSG_REQUEST_BODY_MAX_SIZE
 					&& read_one_msg.head.head == CLIENT_COMMON_HEAD_HEAD
@@ -156,7 +154,7 @@ void TcpConnection::read_header()
 		{
 			//µôÏß
 			_isClosed = true;
-			std::cout << "socket closed!" << std::endl;
+			std::cout << "connection close from" << m_socket.remote_endpoint().address().to_string() << std::endl;
 			//TODO:
 			SessionManager::Instance()->RemoveSession(shared_from_this());
 			m_socket.close();
@@ -168,13 +166,11 @@ void TcpConnection::read_body()
 {
 	auto self(shared_from_this());
 	boost::asio::async_read(m_socket,
-		boost::asio::buffer(read_body_buffer, read_one_msg.head.body_length),
+		boost::asio::buffer(read_one_msg.body, read_one_msg.head.body_length),
 		[this, self](boost::system::error_code ec, std::size_t size)
 	{
 		if (!ec)
 		{
-			memcpy(read_one_msg.body.data, read_body_buffer, size);
-			read_one_msg.body.length = size;
 			read_one_msg.id = _id;
 			Server::GetInstance()->pushPackage(read_one_msg);
 			read_header();
@@ -183,7 +179,7 @@ void TcpConnection::read_body()
 		{
 			//µôÏß
 			_isClosed = true;
-			std::cout << "socket closed!" << std::endl;
+			std::cout << "connection close from" << m_socket.remote_endpoint().address().to_string() << std::endl;
 			//TODO:
 			SessionManager::Instance()->RemoveSession(shared_from_this());
 			m_socket.close();

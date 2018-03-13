@@ -1,5 +1,5 @@
 #include "TcpServer.h"
-
+#include "SessionManager.h"
 using namespace std;
 
 TcpServer::TcpServer(boost::asio::io_context& io_context, short port)
@@ -23,7 +23,10 @@ void TcpServer::do_accept()
 	{
 		if (!ec)
 		{
-			std::make_shared<TcpConnection>(std::move(socket))->start();
+			TcpConnection::Pointer  conn = boost::make_shared<TcpConnection>(std::move(socket));
+			conn->setId(SessionManager::Instance()->getUnloginId());
+			SessionManager::Instance()->SaveSession(conn, conn->getId());
+			conn->start();
 		}
 
 		do_accept();

@@ -59,7 +59,7 @@ private:
 	//消息队列
 	boost::lockfree::queue<Client_Request_Msg> *m_package;
 
-	int         getQueueLength() const
+	int getQueueLength() const
 	{
 		return _push_times - _pop_times;
 	}

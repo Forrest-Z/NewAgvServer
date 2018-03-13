@@ -51,7 +51,7 @@ void Server::initListen()
 {
 	boost::asio::io_context io_context;
 
-	TcpServer netsrv(io_context, 9999);
+	TcpServer netsrv(io_context, 5555);
 	netsrv.start();
 	io_context.run();
 }

@@ -7,6 +7,7 @@
 #define CLIENT_COMMON_HEAD_HEAD		0x88
 #define CLIENT_COMMON_HEAD_TAIL		0xAA
 
+#pragma pack(1)
 //消息的head
 typedef struct _Client_Common_Head
 {
@@ -17,18 +18,11 @@ typedef struct _Client_Common_Head
 	int8_t tail;//固定为0xAA
 }Client_Common_Head;
 
-//消息的body
-typedef struct _Client_Common_Body
-{
-	char data[CLIENT_MSG_REQUEST_BODY_MAX_SIZE];
-	int length;
-}Client_Common_Body;
-
 //!!!完整的请求消息
 typedef struct _Client_Request_Msg {
 	Client_Common_Head head;
-	Client_Common_Body body;
-	int id;//用于标记来自哪个conn
+	char body[CLIENT_MSG_REQUEST_BODY_MAX_SIZE];
+	int id;//用于标记来自哪个conn//client端无用处
 }Client_Request_Msg;
 
 //返回消息的结构的额外头
@@ -43,7 +37,7 @@ typedef struct _CLIENT_RETURN_MSG_HEAD
 typedef struct _Client_Response_Msg {
 	Client_Common_Head head;
 	CLIENT_RETURN_MSG_HEAD return_head;//用于判断返回结果
-	Client_Common_Body body;
+	char body[CLIENT_MSG_REQUEST_BODY_MAX_SIZE];
 }Client_Response_Msg;
 //////////////////////////下面定义具体的消息协议
 
@@ -56,6 +50,7 @@ typedef enum Client_Msg_Todo
 	CLIENT_MSG_TODO_USER_LIST,//列表//none
 	CLIENT_MSG_TODO_USER_DELTE,//删除用户//userid[32]
 	CLIENT_MSG_TODO_USER_ADD,//添加用户//username[64] password[64] role[1]
+	CLIENT_MSG_TODO_USER_MODIFY,//添加用户//username[64] password[64] role[1]
 	CLIENT_MSG_TODO_MAP_CREATE_START,//创建地图开始
 	CLIENT_MSG_TODO_MAP_CREATE_ADD_STATION,//添加站点 station[id[4]+x[4]+y[4]+name[64]+rfid[4]+r[2]+g[2]+b[2]]{个} //如果超出1024长度，可以分成多条
 	CLIENT_MSG_TODO_MAP_CREATE_ADD_LINE, //添加直线 line[id[4] + startstation[4] + endstation[64] + length[4] + draw[1] + r[2] + g[2] + b[2]]{个 }//如果超出1024长度，可以分成多条
@@ -117,3 +112,6 @@ enum {
 
 ////////////////////////////////////////以下是特殊情况的返回结构体
 
+
+
+#pragma pack ()

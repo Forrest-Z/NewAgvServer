@@ -68,7 +68,9 @@ bool Agv::init(int _id,std::string _ip, int _port, TaskFinishCallback _taskFinis
 	}
 
 	//创建连接
-	connection = new AgvConnection(_id,_ip,_port);
+	AgvConnectionOnReadPackage onread = std::bind(&Agv::processOnePack, this, std::placeholders::_1, std::placeholders::_2);
+
+	connection = new AgvConnection(_id,_ip,_port, onread);
 
 	//创建队列处理
 	AgvCmdQueue::ToSendCallback s = std::bind(&Agv::onSend, this, std::placeholders::_1, std::placeholders::_2);

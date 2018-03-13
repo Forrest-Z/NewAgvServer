@@ -20,12 +20,11 @@ void UserManager::login(TcpConnection::Pointer conn, Client_Request_Msg msg)
 	memcpy(&response.head, &msg.head, sizeof(Client_Common_Head));
 	response.head.body_length = 0;
 	response.return_head.result = CLIENT_RETURN_MSG_RESULT_FAIL;
-	response.body.length = 0;
 	
-	if (msg.body.length >= 128)
+	if (msg.head.body_length >= 128)
 	{
-		std::string username(msg.body.data, 64);
-		std::string password(msg.body.data + 64, 64);
+		std::string username(msg.body, 64);
+		std::string password(msg.body + 64, 64);
 		if (username == "qyh"&&password == "1234")
 		{
 			//登录成功
@@ -50,8 +49,8 @@ void UserManager::login(TcpConnection::Pointer conn, Client_Request_Msg msg)
 			memcpy(u.username, username, sizeof(username));
 			memcpy(u.password, password, sizeof(password));
 			
-			memcpy(response.body.data, &u, sizeof(u));
-			response.body.length = sizeof(u);
+			memcpy(response.body, &u, sizeof(u));
+			response.head.body_length = sizeof(u);
 		}
 		else if (username == "qyh") {
 			//密码错误
@@ -83,7 +82,6 @@ void UserManager::logout(TcpConnection::Pointer conn, Client_Request_Msg msg)
 	response.head.body_length = 0;
 	response.return_head.result = CLIENT_RETURN_MSG_RESULT_SUCCESS;
 	response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_NO_ERROR;
-	response.body.length = 0;
 
 	//TODO:设置数据库登录状态
 	conn->setId(SessionManager::Instance()->getUnloginId());
@@ -101,14 +99,13 @@ void UserManager::changePassword(TcpConnection::Pointer conn, Client_Request_Msg
 	response.head.body_length = 0;
 	response.return_head.result = CLIENT_RETURN_MSG_RESULT_SUCCESS;
 	response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_NO_ERROR;
-	response.body.length = 0;
 	
-	if (msg.body.length <= 0) {
+	if (msg.head.body_length <= 0) {
 		response.return_head.result = CLIENT_RETURN_MSG_RESULT_FAIL;
 		response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_LENGTH;
 	}
 	else {
-		std::string newPassword(msg.body.data, msg.body.length);
+		std::string newPassword(msg.body, msg.head.body_length);
 		//TODO:修改数据库的密码
 	}
 	
@@ -128,7 +125,6 @@ void UserManager::list(TcpConnection::Pointer conn, Client_Request_Msg msg)
 	response.head.body_length = 0;
 	response.return_head.result = CLIENT_RETURN_MSG_RESULT_SUCCESS;
 	response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_NO_ERROR;
-	response.body.length = 0;
 
 	//数据库查询[如果长度大于1024的长度，可以分成多条]
 
@@ -145,16 +141,15 @@ void UserManager::remove(TcpConnection::Pointer conn, Client_Request_Msg msg)
 	response.head.body_length = 0;
 	response.return_head.result = CLIENT_RETURN_MSG_RESULT_SUCCESS;
 	response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_NO_ERROR;
-	response.body.length = 0;
 	//数据库查询
 	//需要msg中包含一个ID
-	if (msg.body.length <= 32) {
+	if (msg.head.body_length <= 32) {
 		response.return_head.result = CLIENT_RETURN_MSG_RESULT_FAIL;
 		response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_LENGTH;
 	}
 	else {
 		int id = 0;
-		memcpy(&id, msg.body.data, sizeof(int));
+		memcpy(&id, msg.body, sizeof(int));
 		SessionManager::MapIdConnSession idConn = SessionManager::Instance()->getIdSock();
 		if (idConn->find(id) != idConn->end())
 		{
@@ -179,16 +174,15 @@ void UserManager::add(TcpConnection::Pointer conn, Client_Request_Msg msg)
 	response.head.body_length = 0;
 	response.return_head.result = CLIENT_RETURN_MSG_RESULT_SUCCESS;
 	response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_NO_ERROR;
-	response.body.length = 0;
 
 	//需要msg中包含一个ID
-	if (msg.body.length <= sizeof(USER_INFO) - 1) {//这里不需要包含登录状态
+	if (msg.head.body_length <= sizeof(USER_INFO) - 1) {//这里不需要包含登录状态
 		response.return_head.result = CLIENT_RETURN_MSG_RESULT_FAIL;
 		response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_LENGTH;
 	}
 	else {
 		USER_INFO u;
-		memcpy(&u, msg.body.data, sizeof(USER_INFO) - 1);
+		memcpy(&u, msg.body, sizeof(USER_INFO) - 1);
 		u.status = 0;//在线状态
 		//TODO: 数据库操作
 
