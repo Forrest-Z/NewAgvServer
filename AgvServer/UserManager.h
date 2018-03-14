@@ -50,6 +50,8 @@ public:
 
 	void add(TcpConnection::Pointer conn, Client_Request_Msg msg);
 
+	void modify(TcpConnection::Pointer conn, Client_Request_Msg msg);
+
 	virtual ~UserManager();
 private:
 	UserManager();

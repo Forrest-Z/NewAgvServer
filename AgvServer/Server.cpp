@@ -37,12 +37,15 @@ bool Server::initAll()
 	Server  *srv = Server::GetInstance();
 
 	srv->RunTask(boost::bind(&Server::PopPackage, srv));
+	srv->RunTask(boost::bind(&Server::PopPackage, srv));
+	srv->RunTask(boost::bind(&Server::PopPackage, srv));
+	srv->RunTask(boost::bind(&Server::PopPackage, srv));
 
 	srv->RunTask(boost::bind(&Server::publisher_agv_position, srv));
 	srv->RunTask(boost::bind(&Server::publisher_agv_status, srv));
 	srv->RunTask(boost::bind(&Server::publisher_task, srv));
 	srv->RunTask(boost::bind(&Server::publisher_log, srv));
-
+	initListen();
 	return true;
 }
 
@@ -85,7 +88,7 @@ void Server::PopPackage()
 			TcpConnection::Pointer conn = (*t_roleSock)[pack.id];
 			if (conn == NULL)
 			{
-				std::this_thread::sleep_for(std::chrono::microseconds(1));
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 				continue;
 			}
 			else
@@ -95,7 +98,7 @@ void Server::PopPackage()
 		}
 		else
 		{
-			std::this_thread::sleep_for(std::chrono::microseconds(1));
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 	}
 }
@@ -104,7 +107,7 @@ void Server::publisher_agv_position()
 {
 	while (true)
 	{
-
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 }
 
@@ -112,7 +115,7 @@ void Server::publisher_agv_status()
 {
 	while (true)
 	{
-
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 }
 
@@ -120,7 +123,7 @@ void Server::publisher_task()
 {
 	while (true)
 	{
-
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 }
 
@@ -128,7 +131,7 @@ void Server::publisher_log()
 {
 	while (true)
 	{
-
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 }
 

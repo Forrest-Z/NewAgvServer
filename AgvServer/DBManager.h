@@ -2,6 +2,7 @@
 
 #include <QList>
 #include <QString>
+#include <QDateTime>
 #include <QVariant>
 #include <QSqlDatabase>
 #include <QMutex>

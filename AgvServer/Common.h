@@ -4,27 +4,27 @@
 //用户信息结构体[登录成功时，返回一个该用户的userinfo.用户列表返回多个用户userinfo]
 typedef struct _USER_INFO
 {
-	int32_t id;//id号
-	int32_t role;//角色
+	uint32_t id;//id号
+	uint32_t role;//角色
 	char username[64];//用户名
 	char password[64];//密码
-	int8_t status;//登录状态
+	uint8_t status;//登录状态
 }USER_INFO;
 
 //AGV基本信息
 typedef struct _AGV_BASE_INFO
 {
-	int32_t id;
+	uint32_t id;
 	char name[64];
 	char ip[64];
-	int32_t port;
+	uint32_t port;
 }AGV_BASE_INFO;
 
 //AGV位置信息
 typedef struct _AGV_POSITION_INFO
 {
-	int32_t x;
-	int32_t y;
+	uint32_t x;
+	uint32_t y;
 	int32_t rotation;
 }AGV_POSITION_INFO;
 

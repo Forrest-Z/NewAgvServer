@@ -11,16 +11,16 @@
 //消息的head
 typedef struct _Client_Common_Head
 {
-	int8_t head;//固定为0x88
-	int32_t body_length;//body的长度 最大为TCP_MSG_MAX_SIZE
-	int8_t todo;//要做的事情
-	int32_t queuenumber;//消息序号，返回时要带上
-	int8_t tail;//固定为0xAA
+	uint8_t head;//固定为0x88
+	uint32_t body_length;//body的长度 最大为TCP_MSG_MAX_SIZE
+	uint8_t todo;//要做的事情
+	uint32_t queuenumber;//消息序号，返回时要带上
+	uint8_t tail;//固定为0xAA
 }Client_Common_Head;
 
 //!!!完整的请求消息
 typedef struct _Client_Request_Msg {
-	Client_Common_Head head;
+	Client_Common_Head head;//先读取固定长度的head(11Byte) 然后根据head中的body_length,读取 body_length的 body缓存
 	char body[CLIENT_MSG_REQUEST_BODY_MAX_SIZE];
 	int id;//用于标记来自哪个conn//client端无用处
 }Client_Request_Msg;
@@ -28,14 +28,14 @@ typedef struct _Client_Request_Msg {
 //返回消息的结构的额外头
 typedef struct _CLIENT_RETURN_MSG_HEAD
 {
-	int8_t result;//CLIENT_RETURN_MSG_RESULT
-	int32_t error_code;//CLIENT_RETURN_MSG_ERROR_CODE_
+	uint8_t result;//CLIENT_RETURN_MSG_RESULT
+	uint32_t error_code;//CLIENT_RETURN_MSG_ERROR_CODE_
 	char error_info[256];
 }CLIENT_RETURN_MSG_HEAD;
 
 //!!!完整的返回消息
 typedef struct _Client_Response_Msg {
-	Client_Common_Head head;
+	Client_Common_Head head;//先读取固定长度的head(11Byte) 然后又读取固定长度的return_head(261Byte) 最后根据head中的body_length,读取 body_length的 body缓存
 	CLIENT_RETURN_MSG_HEAD return_head;//用于判断返回结果
 	char body[CLIENT_MSG_REQUEST_BODY_MAX_SIZE];
 }Client_Response_Msg;

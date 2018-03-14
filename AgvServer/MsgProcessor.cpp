@@ -22,6 +22,7 @@ void MsgProcess(TcpConnection::Pointer conn, Client_Request_Msg msg)
 		{ CLIENT_MSG_TODO_USER_LIST,std::bind(&UserManager::list,userManager,std::placeholders::_1,std::placeholders::_2) },
 		{ CLIENT_MSG_TODO_USER_DELTE,std::bind(&UserManager::remove,userManager,std::placeholders::_1,std::placeholders::_2) },
 		{ CLIENT_MSG_TODO_USER_ADD,std::bind(&UserManager::add,userManager,std::placeholders::_1,std::placeholders::_2) },
+		{ CLIENT_MSG_TODO_USER_MODIFY,std::bind(&UserManager::modify,userManager,std::placeholders::_1,std::placeholders::_2) },
 		{ CLIENT_MSG_TODO_MAP_CREATE_START,std::bind(&UserManager::login,userManager,std::placeholders::_1,std::placeholders::_2) },
 		{ CLIENT_MSG_TODO_MAP_CREATE_ADD_STATION,std::bind(&UserManager::login,userManager,std::placeholders::_1,std::placeholders::_2) },
 		{ CLIENT_MSG_TODO_MAP_CREATE_ADD_LINE,std::bind(&UserManager::login,userManager,std::placeholders::_1,std::placeholders::_2) },
