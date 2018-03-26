@@ -21,59 +21,74 @@ public:
 	typedef boost::unordered_map<int, TcpConnection::Pointer> MapIdConn;
 	typedef boost::shared_ptr<MapIdConn> MapIdConnSession;
 
-	//用户ID和用户sock 保存
-	void SaveSession(TcpConnection::Pointer conn, int id,std::string username = "",int role = -1)
-	{
-		if (m_sessions->find(conn) != m_sessions->end()) {
-			//这个连接已经存在了，删除旧的ID
-			auto itr = m_idSock->find((*m_sessions)[conn].id);
-			if (itr != m_idSock->end())
-				m_idSock->erase(itr);
-		}
-		(*m_sessions)[conn].id = id;
-		(*m_sessions)[conn].username = username;
-		(*m_sessions)[conn].role = role;
-		(*m_idSock)[id] = conn;
-	}
+	//用户订阅信息
+	typedef std::vector<TcpConnection::Pointer> SubSession;
+	typedef boost::shared_ptr<SubSession> VectorPointerSessionPtr;
 
-	void RemoveSession(TcpConnection::Pointer conn)
-	{
-		auto itr = m_idSock->find((*m_sessions)[conn].id);
-		if (itr != m_idSock->end())
-			m_idSock->erase(itr);
-		m_sessions->erase(conn);
-	}
+	typedef std::function< void(TcpConnection::Pointer) >  SubCallback;
+
+	//用户ID和用户sock 保存
+	void SaveSession(TcpConnection::Pointer conn, int id, std::string username = "", int role = -1);
+
+	void RemoveSession(TcpConnection::Pointer conn);
 
 	~SessionManager();
 
-	static Pointer Instance()
+	static SessionManager::Pointer getInstance()
 	{
-		static Pointer m_inst = Pointer(new SessionManager());
+		static SessionManager::Pointer m_inst = SessionManager::Pointer(new SessionManager());
 		return m_inst;
 	}
 
-	MapConnSessionPointer getSession()
-	{
-		return m_sessions;
-	}
+	MapConnSessionPointer getSession();
 
-	MapIdConnSession getIdSock()
-	{
-		return m_idSock;
-	}
+	MapIdConnSession getIdSock();
 
-	int getUnloginId()
-	{
-		return --m_unlogin_id;
-	}
+	int getUnloginId();
 
+	void addSubAgvPosition(TcpConnection::Pointer conn);
+
+	void addSubAgvStatus(TcpConnection::Pointer conn);
+
+	void addSubLog(TcpConnection::Pointer conn);
+
+	void addSubTask(TcpConnection::Pointer conn);
+
+	void removeSubAgvPosition(TcpConnection::Pointer conn);
+
+	void removeSubAgvStatus(TcpConnection::Pointer conn);
+
+	void removeSubLog(TcpConnection::Pointer conn);
+
+	void removeSubTask(TcpConnection::Pointer conn);
+
+	//执行遍历回调
+	void subAgvPositionForeach(SubCallback cb);
+	void subAgvStatusForeach(SubCallback cb);
+	void subLogForeach(SubCallback cb);
+	void subTaskForeach(SubCallback cb);
 
 private:
 	SessionManager();
 
-	MapConnSessionPointer m_sessions;
-	MapIdConnSession m_idSock;
+	std::mutex m_sessionmtx;
+	MapConnSessionPointer m_sessions; //CONNECTION --> SESSION(username,id,role) 的map
+
+	std::mutex m_sockmtx;
+	MapIdConnSession m_idSock;//ID --> CONNECTION 的map
 
 	boost::atomic_uint32_t m_unlogin_id;
+
+	std::mutex m_agv_posion_mtx;
+	VectorPointerSessionPtr subs_agv_posion;//订阅者
+
+	std::mutex m_agv_status_mtx;
+	VectorPointerSessionPtr subs_agv_status;//订阅者
+
+	std::mutex m_log_mtx;
+	VectorPointerSessionPtr subs_log;//订阅者
+
+	std::mutex m_task_mtx;
+	VectorPointerSessionPtr subs_task;//订阅者
 };
 

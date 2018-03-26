@@ -15,7 +15,7 @@ typedef struct _Client_Common_Head
 	uint32_t body_length;//body的长度 最大为TCP_MSG_MAX_SIZE
 	uint8_t todo;//要做的事情
 	uint32_t queuenumber;//消息序号，返回时要带上
-	uint8_t tail;//固定为0xAA
+	uint8_t tail;//固定为0xAA [head 和tail 决定了这个消息是否是 我们定义的消息]
 }Client_Common_Head;
 
 //!!!完整的请求消息
@@ -88,6 +88,13 @@ typedef enum Client_Msg_Todo
 	CLIENT_MSG_TODO_CANCEL_SUB_LOG,//取消日志订阅
 	CLIENT_MSG_TODO_SUB_TASK,//任务订阅
 	CLIENT_MSG_TODO_CANCEL_SUB_TASK,//取消任务订阅
+
+	//
+	CLIENT_MSG_TODO_PUB_AGV_POSITION,//发布的agv位置信息，该信息的queuebumber = 0
+	CLIENT_MSG_TODO_PUB_AGV_STATUS,//发布的agv状态信息，该信息的queuebumber = 0
+	CLIENT_MSG_TODO_PUB_LOG,//发布的日志信息，该信息的queuebumber = 0
+	CLIENT_MSG_TODO_PUB_TASK,//发布的任务信息，该信息的queuebumber = 0
+
 }CLIENT_MSG_TODO;
 
 //定义消息头的 todo//---------------------------------------------------------------------------------------------------------------------------------

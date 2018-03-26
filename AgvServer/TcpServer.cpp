@@ -24,8 +24,8 @@ void TcpServer::do_accept()
 		if (!ec)
 		{
 			TcpConnection::Pointer  conn = boost::make_shared<TcpConnection>(std::move(socket));
-			conn->setId(SessionManager::Instance()->getUnloginId());
-			SessionManager::Instance()->SaveSession(conn, conn->getId());
+			conn->setId(SessionManager::getInstance()->getUnloginId());
+			SessionManager::getInstance()->SaveSession(conn, conn->getId());
 			conn->start();
 		}
 

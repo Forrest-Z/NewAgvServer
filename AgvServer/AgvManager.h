@@ -7,6 +7,7 @@
 #include <boost/thread/mutex.hpp>
 
 #include "Agv.h"
+#include "Protocol.h"
 
 class AgvManager :private boost::noncopyable, public boost::enable_shared_from_this<AgvManager>
 {
@@ -27,11 +28,10 @@ public:
 		return m_inst;
 	}
 
-	//用户ID和用户sock 保存
 	void SaveAgv(int id, Agv::Pointer agv)
 	{
+		std::unique_lock<std::mutex> lck(mtx);
 		if (m_mapIdAgvs->find(id) != m_mapIdAgvs->end()) {
-			//这个连接已经存在了，删除旧的ID
 			auto itr = m_mapIdAgvs->find(id);
 			if (itr != m_mapIdAgvs->end())
 				m_mapIdAgvs->erase(itr);
@@ -39,21 +39,33 @@ public:
 		(*m_mapIdAgvs)[id] = agv;
 	}
 
-	void RemoveSession(int id)
+	void RemoveAgv(int id)
 	{
+		std::unique_lock<std::mutex> lck(mtx);
 		auto itr = m_mapIdAgvs->find(id);
 		if (itr != m_mapIdAgvs->end())
 			m_mapIdAgvs->erase(itr);
 	}
 
-	MapIdAgvPoint getSession()
+	MapIdAgvPoint getAgvs()
 	{
+		std::unique_lock<std::mutex> lck(mtx);
 		return m_mapIdAgvs;
 	}
+
+	Agv::Pointer getAgv(int id) {
+		std::unique_lock<std::mutex> lck(mtx);
+		return (*m_mapIdAgvs)[id];
+	}
+
+	std::list<Client_Response_Msg> getPositions();
+
+	std::list<Client_Response_Msg> getstatuss();
 
 private:
 	AgvManager();
 
+	std::mutex mtx;
 	MapIdAgvPoint m_mapIdAgvs;
 };
 

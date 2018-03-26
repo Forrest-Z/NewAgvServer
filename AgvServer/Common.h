@@ -23,6 +23,7 @@ typedef struct _AGV_BASE_INFO
 //AGVŒª÷√–≈œ¢
 typedef struct _AGV_POSITION_INFO
 {
+	uint32_t id;
 	uint32_t x;
 	uint32_t y;
 	int32_t rotation;

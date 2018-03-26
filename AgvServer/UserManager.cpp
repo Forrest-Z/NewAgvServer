@@ -54,7 +54,7 @@ void UserManager::login(TcpConnection::Pointer conn, Client_Request_Msg msg)
 					int role = queryresult.at(0).at(2).toInt();
 
 					//设置状态:
-					SessionManager::Instance()->SaveSession(conn, id, username, role);
+					SessionManager::getInstance()->SaveSession(conn, id, username, role);
 					conn->setId(id);
 
 					response.return_head.result = CLIENT_RETURN_MSG_RESULT_SUCCESS;
@@ -98,8 +98,9 @@ void UserManager::logout(TcpConnection::Pointer conn, Client_Request_Msg msg)
 	params << conn->getId();
 	DBManager::GetInstance()->exeSql(updateSql, params);
 
-	conn->setId(SessionManager::Instance()->getUnloginId());
-	SessionManager::Instance()->SaveSession(conn, conn->getId());
+	//登出
+	conn->setId(SessionManager::getInstance()->getUnloginId());
+	SessionManager::getInstance()->SaveSession(conn, conn->getId());
 
 	//发送返回值
 	conn->write_all(response);
@@ -132,9 +133,10 @@ void UserManager::changePassword(TcpConnection::Pointer conn, Client_Request_Msg
 		}
 	}
 
-	//登出
-	conn->setId(SessionManager::Instance()->getUnloginId());
-	SessionManager::Instance()->SaveSession(conn, conn->getId());
+	//登出//修改完密码，需要重新登录？
+	conn->setId(SessionManager::getInstance()->getUnloginId());
+	SessionManager::getInstance()->SaveSession(conn, conn->getId());
+	//或者直接重置他 的密码。不做登出处理?
 
 	//发送返回值
 	conn->write_all(response);
@@ -152,9 +154,10 @@ void UserManager::list(TcpConnection::Pointer conn, Client_Request_Msg msg)
 	//数据库查询[如果长度大于1024的长度，可以分成多条]
 	QString sql = "select id,user_name,user_password,user_role,user_status from agv_user where role <=?";
 	QList<QVariant> params;
-	SessionManager::MapConnSessionPointer mcs = SessionManager::Instance()->getSession();
+	SessionManager::MapConnSessionPointer mcs = SessionManager::getInstance()->getSession();
 	params << (*mcs)[conn].role;
 	QList<QList<QVariant> > queryresult = DBManager::GetInstance()->query(sql, params);
+	bool needSendLast = true;
 	if (queryresult.length() != 0) {
 		int pos = 0;
 		foreach(auto l, queryresult)
@@ -171,16 +174,19 @@ void UserManager::list(TcpConnection::Pointer conn, Client_Request_Msg msg)
 			memcpy(response.body + pos,&u, sizeof(USER_INFO));
 			response.head.body_length += sizeof(USER_INFO);
 			pos += sizeof(USER_INFO);
+			needSendLast = true;
 			if (pos + sizeof(USER_INFO) > CLIENT_MSG_REQUEST_BODY_MAX_SIZE)
 			{
 				conn->write_all(response);
 				pos = 0;
 				response.head.body_length = 0;
+				needSendLast = false;
 			}
 		}
 	}
 	//发送返回值
-	conn->write_all(response);
+	if(needSendLast)
+		conn->write_all(response);
 }
 
 void UserManager::remove(TcpConnection::Pointer conn, Client_Request_Msg msg)
@@ -200,12 +206,12 @@ void UserManager::remove(TcpConnection::Pointer conn, Client_Request_Msg msg)
 	else {
 		int id = 0;
 		memcpy(&id, msg.body, sizeof(int));
-		SessionManager::MapIdConnSession idConn = SessionManager::Instance()->getIdSock();
+		SessionManager::MapIdConnSession idConn = SessionManager::getInstance()->getIdSock();
 		if (idConn->find(id) != idConn->end())
 		{
 			//该用户在线//登出
-			(*idConn)[id]->setId(SessionManager::Instance()->getUnloginId());
-			SessionManager::Instance()->SaveSession((*idConn)[id], (*idConn)[id]->getId());
+			(*idConn)[id]->setId(SessionManager::getInstance()->getUnloginId());
+			SessionManager::getInstance()->SaveSession((*idConn)[id], (*idConn)[id]->getId());
 		}
 		//TODO: 数据库操作
 		QString sql = "delete from agv_user where id=?";
@@ -241,7 +247,7 @@ void UserManager::add(TcpConnection::Pointer conn, Client_Request_Msg msg)
 		memcpy(&u, msg.body, sizeof(USER_INFO) - 1);
 		u.status = 0;//在线状态
 		//TODO: 数据库操作
-		QString sql = "insert into agv_user user_username, user_password,user_role,user_status values(?,?,?,0)";
+		QString sql = "insert into agv_user user_username, user_password,user_role,user_status values(?,?,?,0);";
 		QList<QVariant> params;
 		params << QString(u.username)<<QString(u.password)<<u.role;
 		if (!DBManager::GetInstance()->exeSql(sql, params))
@@ -249,6 +255,7 @@ void UserManager::add(TcpConnection::Pointer conn, Client_Request_Msg msg)
 			response.return_head.result = CLIENT_RETURN_MSG_RESULT_FAIL;
 			response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_CODE_SAVE_SQL_FAIL;
 		}
+		//TODO:返回插入后的ID值
 	}
 	//发送返回值
 	conn->write_all(response);
@@ -275,8 +282,8 @@ void UserManager::modify(TcpConnection::Pointer conn, Client_Request_Msg msg)
 					 //TODO: 数据库操作
 		QString updateSql = "update agv_user set user_username=?,user_password=?,user_role=? where id=?";
 		QList<QVariant> params;
-		params.append(QString(u.username);
-		params.append(QString(u.password);
+		params.append(QString(u.username));
+		params.append(QString(u.password));
 		params.append(u.role);
 		params.append(u.id);
 		if (!DBManager::GetInstance()->exeSql(updateSql, params)) {

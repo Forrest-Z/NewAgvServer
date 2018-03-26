@@ -41,10 +41,10 @@ bool Server::initAll()
 	srv->RunTask(boost::bind(&Server::PopPackage, srv));
 	srv->RunTask(boost::bind(&Server::PopPackage, srv));
 
-	srv->RunTask(boost::bind(&Server::publisher_agv_position, srv));
-	srv->RunTask(boost::bind(&Server::publisher_agv_status, srv));
-	srv->RunTask(boost::bind(&Server::publisher_task, srv));
-	srv->RunTask(boost::bind(&Server::publisher_log, srv));
+	srv->RunTask(boost::bind(&Server::publisher_agv_position, srv));//实时发布agv 位置信息
+	srv->RunTask(boost::bind(&Server::publisher_agv_status, srv));//实时发布agv 状态信息
+	srv->RunTask(boost::bind(&Server::publisher_task, srv));//实时发布当前所有任务信息
+	srv->RunTask(boost::bind(&Server::publisher_log, srv));//实时发布 日志信息
 	initListen();
 	return true;
 }
@@ -79,7 +79,7 @@ void Server::pushPackage(Client_Request_Msg package)
 void Server::PopPackage()
 {
 	Client_Request_Msg pack;
-	SessionManager::MapIdConnSession t_roleSock = SessionManager::Instance()->getIdSock();
+	SessionManager::MapIdConnSession t_roleSock = SessionManager::getInstance()->getIdSock();
 	while (1)
 	{
 		if (m_package->pop(pack))
@@ -107,7 +107,14 @@ void Server::publisher_agv_position()
 {
 	while (true)
 	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+		//组装信息
+		Client_Response_Msg msg;
+		//TODO
+
+		//执行发送
+		SessionManager::getInstance()->subAgvPositionForeach([&](TcpConnection::Pointer conn) {conn->write_all(msg);});
 	}
 }
 
@@ -115,15 +122,28 @@ void Server::publisher_agv_status()
 {
 	while (true)
 	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		std::this_thread::sleep_for(std::chrono::milliseconds(200));
+		//组装信息
+		Client_Response_Msg msg;
+		//TODO
+
+		//执行发送
+		SessionManager::getInstance()->subAgvStatusForeach([&](TcpConnection::Pointer conn) {conn->write_all(msg);});
 	}
 }
+
 
 void Server::publisher_task()
 {
 	while (true)
 	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		//组装信息
+		Client_Response_Msg msg;
+		//TODO
+
+		//执行发送
+		SessionManager::getInstance()->subTaskForeach([&](TcpConnection::Pointer conn) {conn->write_all(msg);});
 	}
 }
 
@@ -132,6 +152,14 @@ void Server::publisher_log()
 	while (true)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+		//组装信息
+		Client_Response_Msg msg;
+		//TODO
+
+		//执行发送
+		//执行发送
+		SessionManager::getInstance()->subLogForeach([&](TcpConnection::Pointer conn) {conn->write_all(msg);});
 	}
 }
 

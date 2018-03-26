@@ -156,7 +156,7 @@ void TcpConnection::read_header()
 			_isClosed = true;
 			std::cout << "connection close from" << m_socket.remote_endpoint().address().to_string() << std::endl;
 			//TODO:
-			SessionManager::Instance()->RemoveSession(shared_from_this());
+			SessionManager::getInstance()->RemoveSession(shared_from_this());
 			m_socket.close();
 		}
 	});
@@ -181,7 +181,7 @@ void TcpConnection::read_body()
 			_isClosed = true;
 			std::cout << "connection close from" << m_socket.remote_endpoint().address().to_string() << std::endl;
 			//TODO:
-			SessionManager::Instance()->RemoveSession(shared_from_this());
+			SessionManager::getInstance()->RemoveSession(shared_from_this());
 			m_socket.close();
 		}
 	});
