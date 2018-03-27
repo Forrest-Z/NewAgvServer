@@ -153,12 +153,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Agv.cpp" />
+    <ClCompile Include="AgvArc.cpp" />
     <ClCompile Include="AgvCmdQueue.cpp" />
     <ClCompile Include="AgvConnection.cpp" />
+    <ClCompile Include="AgvLine.cpp" />
     <ClCompile Include="AgvManager.cpp" />
-    <ClCompile Include="common.cpp" />
+    <ClCompile Include="AgvStation.cpp" />
+    <ClCompile Include="Common.cpp" />
     <ClCompile Include="DBManager.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MapManger.cpp" />
     <ClCompile Include="MsgProcessor.cpp" />
     <ClCompile Include="Server.cpp" />
     <ClCompile Include="Session.cpp" />
@@ -168,12 +172,15 @@
     <ClCompile Include="UserManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Agv.h" />
+    <ClInclude Include="AgvArc.h" />
     <ClInclude Include="AgvCmdQueue.h" />
     <ClInclude Include="AgvConnection.h" />
+    <ClInclude Include="AgvLine.h" />
     <ClInclude Include="AgvManager.h" />
+    <ClInclude Include="AgvStation.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="DBManager.h" />
+    <ClInclude Include="MapManger.h" />
     <ClInclude Include="MsgProcessor.h" />
     <ClInclude Include="Protocol.h" />
     <ClInclude Include="Server.h" />

@@ -14,7 +14,7 @@ class AgvManager :private boost::noncopyable, public boost::enable_shared_from_t
 public:
 	typedef boost::shared_ptr<AgvManager> Pointer;
 
-	//通过用户ID，查找AGV
+	//通过ID，查找AGV
 	typedef boost::unordered_map<int, Agv::Pointer> MapIdAgv;
 	typedef boost::shared_ptr<MapIdAgv> MapIdAgvPoint;
 
@@ -22,12 +22,22 @@ public:
 
 	virtual ~AgvManager();
 
-	static Pointer Instance()
+	static Pointer getInstance()
 	{
 		static Pointer m_inst = Pointer(new AgvManager());
 		return m_inst;
 	}
 
+	void onFinish(Agv::Pointer agv);
+
+	void onError(int code, Agv::Pointer agv);
+	
+	void onInterupt(Agv::Pointer agv);
+	
+	void updateOdometer(int odometer, Agv::Pointer agv);
+
+	void updateStationOdometer(int rfid, int odometer, Agv::Pointer agv);
+	
 	void SaveAgv(int id, Agv::Pointer agv)
 	{
 		std::unique_lock<std::mutex> lck(mtx);

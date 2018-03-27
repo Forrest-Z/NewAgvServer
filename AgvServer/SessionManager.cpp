@@ -3,7 +3,11 @@
 SessionManager::SessionManager() :
 	m_sessions(new MapConnSession()),
 	m_idSock(new MapIdConn()),
-	m_unlogin_id(-1)
+	m_unlogin_id(-1),
+	subs_agv_posion(new SubSession()),
+	subs_agv_status(new SubSession()),
+	subs_log(new SubSession()),
+	subs_task(new SubSession())
 {
 }
 
@@ -12,6 +16,13 @@ SessionManager::~SessionManager()
 {
 }
 
+void SessionManager::logout(int id)
+{
+	if (m_idSock->find(id) != m_idSock->end()) {
+		(*m_idSock)[id]->setId(SessionManager::getInstance()->getUnloginId());
+		SaveSession((*m_idSock)[id], (*m_idSock)[id]->getId());
+	}
+}
 
 //用户ID和用户sock 保存
 void SessionManager::SaveSession(TcpConnection::Pointer conn, int id, std::string username, int role)
@@ -46,16 +57,21 @@ void SessionManager::RemoveSession(TcpConnection::Pointer conn)
 	m_sockmtx.unlock();
 }
 
-SessionManager::MapConnSessionPointer SessionManager::getSession()
+TcpConnection::Pointer SessionManager::getConnById(int id)
 {
-	std::unique_lock<std::mutex> lck(m_sessionmtx);
-	return m_sessions;
+	if (m_idSock->find(id) != m_idSock->end()) {
+		return (*m_idSock)[id];
+	}
+	return NULL;
 }
 
-SessionManager::MapIdConnSession SessionManager::getIdSock()
+Session SessionManager::getSessionByConn(TcpConnection::Pointer conn)
 {
-	std::unique_lock<std::mutex> lck(m_sockmtx);
-	return m_idSock;
+	Session s;
+	if (m_sessions->find(conn) != m_sessions->end()) {
+		return (*m_sessions)[conn];
+	}
+	return s;
 }
 
 int SessionManager::getUnloginId()

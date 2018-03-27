@@ -1,6 +1,7 @@
 #include "Server.h"
 #include "SessionManager.h"
 #include "MsgProcessor.h"
+#include "AgvManager.h"
 #define  PackageCount          10*1024     //队列中可以存放未处理包的数量
 
 Server *Server::m_instance = NULL;
@@ -16,7 +17,7 @@ Server::~Server()
 {
 }
 
-Server* Server::GetInstance()
+Server* Server::getInstance()
 {
 	if (NULL == m_instance)
 	{
@@ -34,7 +35,7 @@ bool Server::initSql()
 //2.根据数据库内容，初始化所有的member
 bool Server::initAll()
 {
-	Server  *srv = Server::GetInstance();
+	Server  *srv = Server::getInstance();
 
 	srv->RunTask(boost::bind(&Server::PopPackage, srv));
 	srv->RunTask(boost::bind(&Server::PopPackage, srv));
@@ -79,13 +80,12 @@ void Server::pushPackage(Client_Request_Msg package)
 void Server::PopPackage()
 {
 	Client_Request_Msg pack;
-	SessionManager::MapIdConnSession t_roleSock = SessionManager::getInstance()->getIdSock();
 	while (1)
 	{
 		if (m_package->pop(pack))
 		{
 			_pop_times += 1;
-			TcpConnection::Pointer conn = (*t_roleSock)[pack.id];
+			TcpConnection::Pointer conn = SessionManager::getInstance()->getConnById(pack.id);
 			if (conn == NULL)
 			{
 				std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -110,11 +110,15 @@ void Server::publisher_agv_position()
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 		//组装信息
-		Client_Response_Msg msg;
-		//TODO
+		std::list<Client_Response_Msg> msgs = AgvManager::getInstance()->getPositions();
+
+		if (msgs.size() <= 0)continue;
 
 		//执行发送
-		SessionManager::getInstance()->subAgvPositionForeach([&](TcpConnection::Pointer conn) {conn->write_all(msg);});
+		SessionManager::getInstance()->subAgvPositionForeach([&](TcpConnection::Pointer conn) {
+			for (auto itr = msgs.begin(); itr != msgs.end();++itr)
+				conn->write_all(*itr);
+		});
 	}
 }
 
@@ -124,11 +128,16 @@ void Server::publisher_agv_status()
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(200));
 		//组装信息
-		Client_Response_Msg msg;
-		//TODO
+		std::list<Client_Response_Msg> msgs = AgvManager::getInstance()->getstatuss();
+
+		if (msgs.size() <= 0)continue;
 
 		//执行发送
-		SessionManager::getInstance()->subAgvStatusForeach([&](TcpConnection::Pointer conn) {conn->write_all(msg);});
+		SessionManager::getInstance()->subAgvStatusForeach([&](TcpConnection::Pointer conn) {
+			for (auto itr = msgs.begin(); itr != msgs.end();++itr)
+				conn->write_all(*itr);
+		});
+
 	}
 }
 
@@ -163,3 +172,16 @@ void Server::publisher_log()
 	}
 }
 
+void Server::notifyAll(ENUM_NOTIFY_ALL_TYPE type)
+{
+	if (type == ENUM_NOTIFY_ALL_TYPE_MAP_UPDATE) {
+		Client_Response_Msg msg;
+		memset(&msg, 0, sizeof(Client_Response_Msg));
+		msg.head.head = 0x88;
+		msg.head.queuenumber = 0;
+		msg.head.tail = 0xAA;
+		msg.head.todo = CLIENT_MSG_TODO_NOTIFY_ALL_MAP_UPDATE;
+		msg.head.body_length = 0;
+
+	}
+}

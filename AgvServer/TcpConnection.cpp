@@ -146,7 +146,7 @@ void TcpConnection::read_header()
 			}
 			else {
 				read_one_msg.id = _id;
-				Server::GetInstance()->pushPackage(read_one_msg);
+				Server::getInstance()->pushPackage(read_one_msg);
 				read_header();
 			}
 		}
@@ -172,7 +172,7 @@ void TcpConnection::read_body()
 		if (!ec)
 		{
 			read_one_msg.id = _id;
-			Server::GetInstance()->pushPackage(read_one_msg);
+			Server::getInstance()->pushPackage(read_one_msg);
 			read_header();
 		}
 		else

@@ -54,7 +54,19 @@
     <ClCompile Include="AgvCmdQueue.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="common.cpp">
+    <ClCompile Include="MapManger.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="AgvArc.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="AgvLine.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="AgvStation.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Common.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -95,10 +107,19 @@
     <ClInclude Include="AgvConnection.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Agv.h">
+    <ClInclude Include="AgvCmdQueue.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="AgvCmdQueue.h">
+    <ClInclude Include="MapManger.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="AgvArc.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="AgvLine.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="AgvStation.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

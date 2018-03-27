@@ -8,8 +8,7 @@
 void MsgProcess(TcpConnection::Pointer conn, Client_Request_Msg msg)
 {
 	//过滤未登录的消息[未登录，不能响应 除了登录以外的其他任何请求]
-	SessionManager::MapConnSessionPointer sessions = SessionManager::getInstance()->getSession();
-	if ((*sessions)[conn].id <= 0 && msg.head.todo != CLIENT_MSG_TODO_USER_LOGIN) 
+	if (conn->getId() <= 0 && msg.head.todo != CLIENT_MSG_TODO_USER_LOGIN)
 	{
 		//如果未登录，并且不是登录消息，那么回一句 请登录
 		Client_Response_Msg response;

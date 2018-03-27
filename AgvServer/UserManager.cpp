@@ -30,7 +30,7 @@ void UserManager::login(TcpConnection::Pointer conn, Client_Request_Msg msg)
 		QString querySqlA = "select id,user_password,user_role,user_signState from agv_user where user_username=?";
 		QList<QVariant> params;
 		params << QString(msg.body);
-		QList<QList<QVariant> > queryresult = DBManager::GetInstance()->query(querySqlA, params);
+		QList<QList<QVariant> > queryresult = DBManager::getInstance()->query(querySqlA, params);
 		if (queryresult.length() == 0) {
 			std::cout << "username not exist" << std::endl;
 			response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_CODE_USERNAME_NOT_EXIST;
@@ -42,7 +42,7 @@ void UserManager::login(TcpConnection::Pointer conn, Client_Request_Msg msg)
 				QString updateSql = "update agv_user set user_signState=1 where id=? ";
 				params.clear();
 				params << queryresult.at(0).at(0).toInt();
-				if (!DBManager::GetInstance()->exeSql(updateSql, params)) {
+				if (!DBManager::getInstance()->exeSql(updateSql, params)) {
 					//登录失败
 					std::cout << "save login status fail" << std::endl;
 					response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_CODE_SAVE_SQL_FAIL;
@@ -96,7 +96,7 @@ void UserManager::logout(TcpConnection::Pointer conn, Client_Request_Msg msg)
 	QString updateSql = "update agv_user set user_signState=0 where id=? ";
 	QList<QVariant> params;
 	params << conn->getId();
-	DBManager::GetInstance()->exeSql(updateSql, params);
+	DBManager::getInstance()->exeSql(updateSql, params);
 
 	//登出
 	conn->setId(SessionManager::getInstance()->getUnloginId());
@@ -125,7 +125,7 @@ void UserManager::changePassword(TcpConnection::Pointer conn, Client_Request_Msg
 		QString updateSql = "update agv_user set user_password=? where id = ?";
 		QList<QVariant> params;
 		params << QString(msg.body) << conn->getId();
-		if (!DBManager::GetInstance()->exeSql(updateSql, params)) {
+		if (!DBManager::getInstance()->exeSql(updateSql, params)) {
 			//登录失败
 			std::cout << "save new password to database fail" << std::endl;
 			response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_CODE_SAVE_SQL_FAIL;
@@ -154,9 +154,9 @@ void UserManager::list(TcpConnection::Pointer conn, Client_Request_Msg msg)
 	//数据库查询[如果长度大于1024的长度，可以分成多条]
 	QString sql = "select id,user_name,user_password,user_role,user_status from agv_user where role <=?";
 	QList<QVariant> params;
-	SessionManager::MapConnSessionPointer mcs = SessionManager::getInstance()->getSession();
-	params << (*mcs)[conn].role;
-	QList<QList<QVariant> > queryresult = DBManager::GetInstance()->query(sql, params);
+	Session mcs = SessionManager::getInstance()->getSessionByConn(conn);
+	params << mcs.role;
+	QList<QList<QVariant> > queryresult = DBManager::getInstance()->query(sql, params);
 	bool needSendLast = true;
 	if (queryresult.length() != 0) {
 		int pos = 0;
@@ -206,18 +206,12 @@ void UserManager::remove(TcpConnection::Pointer conn, Client_Request_Msg msg)
 	else {
 		int id = 0;
 		memcpy(&id, msg.body, sizeof(int));
-		SessionManager::MapIdConnSession idConn = SessionManager::getInstance()->getIdSock();
-		if (idConn->find(id) != idConn->end())
-		{
-			//该用户在线//登出
-			(*idConn)[id]->setId(SessionManager::getInstance()->getUnloginId());
-			SessionManager::getInstance()->SaveSession((*idConn)[id], (*idConn)[id]->getId());
-		}
+		SessionManager::getInstance()->logout(id);
 		//TODO: 数据库操作
 		QString sql = "delete from agv_user where id=?";
 		QList<QVariant> params;
 		params << id;
-		if (!DBManager::GetInstance()->exeSql(sql, params))
+		if (!DBManager::getInstance()->exeSql(sql, params))
 		{
 			response.return_head.result = CLIENT_RETURN_MSG_RESULT_FAIL;
 			response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_CODE_SAVE_SQL_FAIL;
@@ -250,7 +244,7 @@ void UserManager::add(TcpConnection::Pointer conn, Client_Request_Msg msg)
 		QString sql = "insert into agv_user user_username, user_password,user_role,user_status values(?,?,?,0);";
 		QList<QVariant> params;
 		params << QString(u.username)<<QString(u.password)<<u.role;
-		if (!DBManager::GetInstance()->exeSql(sql, params))
+		if (!DBManager::getInstance()->exeSql(sql, params))
 		{
 			response.return_head.result = CLIENT_RETURN_MSG_RESULT_FAIL;
 			response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_CODE_SAVE_SQL_FAIL;
@@ -286,7 +280,7 @@ void UserManager::modify(TcpConnection::Pointer conn, Client_Request_Msg msg)
 		params.append(QString(u.password));
 		params.append(u.role);
 		params.append(u.id);
-		if (!DBManager::GetInstance()->exeSql(updateSql, params)) {
+		if (!DBManager::getInstance()->exeSql(updateSql, params)) {
 			//成功
 			response.return_head.result = CLIENT_RETURN_MSG_RESULT_FAIL;
 			response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_CODE_SAVE_SQL_FAIL;

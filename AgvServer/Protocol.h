@@ -95,6 +95,7 @@ typedef enum Client_Msg_Todo
 	CLIENT_MSG_TODO_PUB_LOG,//发布的日志信息，该信息的queuebumber = 0
 	CLIENT_MSG_TODO_PUB_TASK,//发布的任务信息，该信息的queuebumber = 0
 
+	CLIENT_MSG_TODO_NOTIFY_ALL_MAP_UPDATE,//通知消息 -- 地图更新
 }CLIENT_MSG_TODO;
 
 //定义消息头的 todo//---------------------------------------------------------------------------------------------------------------------------------

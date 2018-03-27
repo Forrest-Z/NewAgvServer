@@ -15,7 +15,7 @@ class DBManager :private boost::noncopyable, public boost::enable_shared_from_th
 public:
 	typedef boost::shared_ptr<DBManager> Pointer;
 	
-	static Pointer GetInstance()
+	static Pointer getInstance()
 	{
 		static Pointer m_inst = Pointer(new DBManager());
 		return m_inst;

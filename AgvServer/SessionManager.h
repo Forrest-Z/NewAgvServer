@@ -27,6 +27,8 @@ public:
 
 	typedef std::function< void(TcpConnection::Pointer) >  SubCallback;
 
+	void logout(int id);
+
 	//用户ID和用户sock 保存
 	void SaveSession(TcpConnection::Pointer conn, int id, std::string username = "", int role = -1);
 
@@ -40,9 +42,9 @@ public:
 		return m_inst;
 	}
 
-	MapConnSessionPointer getSession();
+	TcpConnection::Pointer getConnById(int id);
 
-	MapIdConnSession getIdSock();
+	Session getSessionByConn(TcpConnection::Pointer conn);
 
 	int getUnloginId();
 

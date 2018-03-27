@@ -35,8 +35,9 @@ void Agv::stopTask()
 
 void Agv::onQueueFinish()
 {
+	auto self(shared_from_this());
 	if (taskFinish != nullptr) {
-		taskFinish(this);
+		taskFinish(self);
 	}
 }
 
@@ -83,6 +84,7 @@ bool Agv::init(int _id,std::string _ip, int _port, TaskFinishCallback _taskFinis
 
 void Agv::processOnePack(char *qba, int len)
 {
+	auto self(shared_from_this());
 	int kk = (int)(qba[1] & 0xFF);
 
 	if (kk != len - 1) return;//除去包头
@@ -164,7 +166,7 @@ void Agv::processOnePack(char *qba, int len)
 			//2.通知上面的，取消任务了
 			if (taskInteruput != nullptr) 
 			{
-				taskInteruput(this);
+				taskInteruput(self);
 			}
 
 			//3.任务置空? 交给上面完成吧
@@ -181,7 +183,7 @@ void Agv::processOnePack(char *qba, int len)
 		cmdQueue->clear();
 		//任务过程中发生错误
 		if (taskError != nullptr) {
-			taskError(statusinfo.error_no, this);
+			taskError(statusinfo.error_no, self);
 		}
 	}
 
@@ -192,12 +194,12 @@ void Agv::processOnePack(char *qba, int len)
 		lastStationOdometer = statusinfo.mileage;
 
 		if (updateMR != nullptr) {
-			updateMR(statusinfo.currentRfid, statusinfo.mileage, this);
+			updateMR(statusinfo.currentRfid, statusinfo.mileage, self);
 		}
 	}
 	else {
 		if (updateM != nullptr) {
-			updateM(statusinfo.mileage, this);
+			updateM(statusinfo.mileage, self);
 		}
 	}
 

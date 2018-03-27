@@ -13,7 +13,7 @@ class Server
 public:
 	virtual ~Server();
 
-	static Server* GetInstance();
+	static Server* getInstance();
 
 	//1.初始化数据库连接，这是基础
 	bool initSql();
@@ -33,6 +33,11 @@ public:
 	void publisher_agv_status();
 	void publisher_task();
 	void publisher_log();
+
+	typedef enum {
+		ENUM_NOTIFY_ALL_TYPE_MAP_UPDATE = 0,
+	}ENUM_NOTIFY_ALL_TYPE;
+	void notifyAll(ENUM_NOTIFY_ALL_TYPE type);
 
 	template <typename T>
 	void RunTask(T task)

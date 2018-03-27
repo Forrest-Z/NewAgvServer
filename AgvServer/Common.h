@@ -1,6 +1,8 @@
 #pragma once
 #include <cstdint>
 
+#define M_PI 3.14159265358979323846
+
 //用户信息结构体[登录成功时，返回一个该用户的userinfo.用户列表返回多个用户userinfo]
 typedef struct _USER_INFO
 {
@@ -90,12 +92,36 @@ typedef struct _AGV_ARC
 	int8_t g;
 	int8_t b;
 	int8_t draw;
-	float p1x;
-	float p1y;
-	float p2x;
-	float p2y;
+	double p1x;
+	double p1y;
+	double p2x;
+	double p2y;
 }AGV_ARC;
 
+typedef struct _PATH_LEFT_MIDDLE_RIGHT {
+	int lastLine;
+	int nextLine;
+
+	bool operator == (const _PATH_LEFT_MIDDLE_RIGHT &r) {
+		return lastLine == r.lastLine && nextLine == r.nextLine;
+	}
+
+	bool operator < (const _PATH_LEFT_MIDDLE_RIGHT &r) const
+	{
+		if (lastLine != r.lastLine) {
+			return lastLine<r.lastLine;
+		}
+
+		return nextLine<r.nextLine;
+	}
+}PATH_LEFT_MIDDLE_RIGHT;
+
+enum {
+	PATH_LMF_NOWAY = -2,//代表可能要掉头行驶
+	PATH_LMR_LEFT = -1,
+	PATH_LMR_MIDDLE = 0,
+	PATH_LMR_RIGHT = 1,
+};
 
 unsigned char checkSum(unsigned char *data, int len);
 

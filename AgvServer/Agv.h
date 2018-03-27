@@ -10,23 +10,23 @@ public:
 	typedef boost::shared_ptr<Agv> Pointer;
 
 	//任务结束回调
-	typedef std::function<void(Agv *)> TaskFinishCallback;
+	typedef std::function<void(Agv::Pointer)> TaskFinishCallback;
 	TaskFinishCallback taskFinish;
 
 	//任务错误回调
-	typedef std::function<void(int, Agv *)> TaskErrorCallback;
+	typedef std::function<void(int, Agv::Pointer)> TaskErrorCallback;
 	TaskErrorCallback taskError;
 
 	//任务被打断回调
-	typedef std::function<void(Agv *)> TaskInteruptCallback;
+	typedef std::function<void(Agv::Pointer)> TaskInteruptCallback;
 	TaskInteruptCallback taskInteruput;
 
 	//更新里程计
-	typedef std::function<void(int, Agv *)> UpdateMCallback;
+	typedef std::function<void(int, Agv::Pointer)> UpdateMCallback;
 	UpdateMCallback updateM;
 
 	//更新里程计和站点
-	typedef std::function<void(int, int, Agv *)> UpdateMRCallback;
+	typedef std::function<void(int, int, Agv::Pointer)> UpdateMRCallback;
 	UpdateMRCallback updateMR;
 
 	Agv();
@@ -86,7 +86,7 @@ public:
 	int status = AGV_STATUS_IDLE;
 	
 	//当前路径
-	std::list<int> currentPath;
+	std::vector<int> currentPath;
 	//正在执行任务的ID
 	int currentTaskId = 0;
 	
