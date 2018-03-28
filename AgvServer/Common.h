@@ -3,6 +3,8 @@
 
 #define M_PI 3.14159265358979323846
 
+#define  DISTANCE_INFINITY INT_MAX
+
 //用户信息结构体[登录成功时，返回一个该用户的userinfo.用户列表返回多个用户userinfo]
 typedef struct _USER_INFO
 {
@@ -122,6 +124,8 @@ enum {
 	PATH_LMR_MIDDLE = 0,
 	PATH_LMR_RIGHT = 1,
 };
+
+typedef std::unique_lock<std::mutex>  UNIQUE_LCK;
 
 unsigned char checkSum(unsigned char *data, int len);
 

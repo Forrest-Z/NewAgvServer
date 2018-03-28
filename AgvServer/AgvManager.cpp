@@ -180,7 +180,7 @@ void AgvManager::updateStationOdometer(int rfid, int odometer, Agv::Pointer agv)
 std::list<Client_Response_Msg> AgvManager::getPositions()
 {
 	std::list<Client_Response_Msg> msgs;
-	std::unique_lock<std::mutex> lck(mtx);
+	UNIQUE_LCK lck(mtx);
 	Client_Response_Msg msg;
 	memset(&msg, 0, sizeof(Client_Response_Msg));
 	msg.head.head = 0x88;
@@ -205,7 +205,7 @@ std::list<Client_Response_Msg> AgvManager::getPositions()
 std::list<Client_Response_Msg> AgvManager::getstatuss()
 {
 	std::list<Client_Response_Msg> msgs;
-	std::unique_lock<std::mutex> lck(mtx);
+	UNIQUE_LCK lck(mtx);
 	Client_Response_Msg msg;
 	memset(&msg, 0, sizeof(Client_Response_Msg));
 	msg.head.head = 0x88;

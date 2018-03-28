@@ -44,7 +44,7 @@ public:
 	bool load();
 
 	//获取最优路径
-	std::list<int> getBestPath();
+	std::list<int> getBestPath(int agvId, int lastStation, int startStation, int endStation, int &distance, bool canChangeDirect);
 
 	//占领一个站点
 	void occuStation(int station, int occuAgv);
@@ -105,6 +105,8 @@ private:
 	std::map<int, int> g_reverseLines;//线路和它的反方向线路的集合。
 
 	MapManger();
+
+	void clear();
 
 	int getLMR(AgvLine *lastLine, AgvLine *nextLine);
 };

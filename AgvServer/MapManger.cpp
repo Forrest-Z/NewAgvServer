@@ -14,29 +14,34 @@ MapManger::~MapManger()
 {
 }
 
-//重置地图
-void MapManger::createMapStart()
+void MapManger::clear()
 {
-	std::unique_lock<std::mutex> lck(mtx_stations);
-	std::unique_lock<std::mutex> lck2(mtx_lines);
-	std::unique_lock<std::mutex> lck3(mtx_lmr);
-	std::unique_lock<std::mutex> lck4(mtx_adj);
-	std::unique_lock<std::mutex> lck5(mtx_reverse);
+	UNIQUE_LCK lck(mtx_stations);
+	UNIQUE_LCK lck2(mtx_lines);
+	UNIQUE_LCK lck3(mtx_lmr);
+	UNIQUE_LCK lck4(mtx_adj);
+	UNIQUE_LCK lck5(mtx_reverse);
 
 	for (auto p : g_m_stations)
 	{
 		delete p.second;
 	}
-	g_m_stations.clear();
-
 	for (auto p : g_m_lines)
 	{
 		delete p.second;
 	}
+	g_m_stations.clear();
 	g_m_lines.clear();
 	g_m_lmr.clear();
 	g_m_l_adj.clear();
 	g_reverseLines.clear();
+}
+
+//重置地图
+void MapManger::createMapStart()
+{
+	//如果有任务正在执行或者等待执行，那么返回错误
+	clear();
 	//update database
 	QString deleteStationSql = "delete from agv_station;";
 	QList<QVariant> params;
@@ -59,7 +64,7 @@ void MapManger::createMapStart()
 	b = DBManager::getInstance()->exeSql(deleteAdjSql, params);
 	if (!b) {
 		//g_log->log(AGV_LOG_LEVEL_ERROR, "can not clear table agv_adj!");
-	}	
+	}
 }
 
 //重置后添加站点
@@ -67,11 +72,11 @@ void MapManger::addStation(AgvStation s)
 {
 	QString insertSql = "INSERT INTO agv_station (id,station_name, station_x,station_y,station_rfid,station_color_r,station_color_g,station_color_b) VALUES (?,?,?,?,?,?,?,?);";
 	QList<QVariant> params;
-	params <<s.id << QString::fromStdString(s.name) << s.x << s.y
+	params << s.id << QString::fromStdString(s.name) << s.x << s.y
 		<< s.rfid << s.color_r << s.color_g << s.color_b;
 	if (DBManager::getInstance()->exeSql(insertSql, params)) {
-		std::unique_lock<std::mutex> lck(mtx_stations);
-		g_m_stations.insert(std::make_pair(s.id,new AgvStation(s)));
+		UNIQUE_LCK lck(mtx_stations);
+		g_m_stations.insert(std::make_pair(s.id, new AgvStation(s)));
 	}
 	else {
 		//g_log->log(AGV_LOG_LEVEL_ERROR, "save agv statiom to database fail!");
@@ -84,11 +89,11 @@ void MapManger::addLine(AgvLine l)
 	assert(l.line);
 	QString insertSql = "INSERT INTO agv_line (id,line_startStation,line_endStation,line_color_r,line_color_g,line_color_b,line_line,line_length,line_draw) VALUES (?,?,?,?,?,?,?,?,?,?);";
 	QList<QVariant> params;
-	params <<l.id<< l.startStation << l.endStation  << l.color_r << l.color_g << l.color_b << l.line << l.length << l.draw;
+	params << l.id << l.startStation << l.endStation << l.color_r << l.color_g << l.color_b << l.line << l.length << l.draw;
 
 	if (DBManager::getInstance()->exeSql(insertSql, params))
 	{
-		std::unique_lock<std::mutex> lck(mtx_lines);
+		UNIQUE_LCK lck(mtx_lines);
 		g_m_lines.insert(std::make_pair(l.id, new AgvLine(l)));
 	}
 	else {
@@ -118,7 +123,7 @@ void MapManger::addArc(AgvArc arc)
 
 	if (DBManager::getInstance()->exeSql(insertSql, params))
 	{
-		std::unique_lock<std::mutex> lck(mtx_lines);
+		UNIQUE_LCK lck(mtx_lines);
 		g_m_lines.insert(std::make_pair(arc.id, new AgvArc(arc)));
 	}
 	else {
@@ -157,10 +162,10 @@ int MapManger::getLMR(AgvLine *lastLine, AgvLine *nextLine)
 
 	double changeAngle = nextAngle - lastAngle;
 
-	while (changeAngle>M_PI) {
+	while (changeAngle > M_PI) {
 		changeAngle -= 2 * M_PI;
 	}
-	while (changeAngle<-1 * M_PI) {
+	while (changeAngle < -1 * M_PI) {
 		changeAngle += 2 * M_PI;
 	}
 
@@ -174,16 +179,16 @@ int MapManger::getLMR(AgvLine *lastLine, AgvLine *nextLine)
 			nextAngle = atan2(n_endY - n_startY, n_endX - n_startX);
 			double changeAngle = nextAngle - lastAngle;
 
-			while (changeAngle>M_PI) {
+			while (changeAngle > M_PI) {
 				changeAngle -= 2 * M_PI;
 			}
-			while (changeAngle<-1 * M_PI) {
+			while (changeAngle < -1 * M_PI) {
 				changeAngle += 2 * M_PI;
 			}
 			if (abs(changeAngle) <= 20 * M_PI / 180) {
 				return PATH_LMR_MIDDLE;
 			}
-			else if (changeAngle>0) {
+			else if (changeAngle > 0) {
 				return PATH_LMR_RIGHT;
 			}
 			else {
@@ -199,24 +204,27 @@ int MapManger::getLMR(AgvLine *lastLine, AgvLine *nextLine)
 		return PATH_LMF_NOWAY;
 	}
 
-	if (changeAngle>0) {
+	if (changeAngle > 0) {
 		return PATH_LMR_RIGHT;
 	}
 	else {
 		return PATH_LMR_LEFT;
 	}
-
 }
 
 
 //重置完了地图//通知所有客户端地图更新,
 void MapManger::createMapFinish()
 {
+	UNIQUE_LCK lck(mtx_stations);
+	UNIQUE_LCK lck2(mtx_lines);
+	UNIQUE_LCK lck3(mtx_lmr);
+	UNIQUE_LCK lck4(mtx_adj);
+	UNIQUE_LCK lck5(mtx_reverse);
 	//A. ----- 通过添加的站点，线路，计算所有的 adj。然后计算所有的lmr。
 	//1. 构建反向线 有A--B的线路，然后将B--A的线路推算出来
 	int maxId = 0;
-	std::unique_lock<std::mutex> lck(mtx_lines);
-	std::for_each(g_m_lines.begin(), g_m_lines.end(),[&](std::pair<int, AgvLine *> pp) {
+	std::for_each(g_m_lines.begin(), g_m_lines.end(), [&](std::pair<int, AgvLine *> pp) {
 		if (pp.second->id > maxId) {
 			maxId = pp.second->id;
 		}
@@ -256,8 +264,7 @@ void MapManger::createMapFinish()
 				PATH_LEFT_MIDDLE_RIGHT p;
 				p.lastLine = a->id;
 				p.nextLine = b->id;
-				std::unique_lock<std::mutex> lcktemp(mtx_lmr);
-				if (g_m_lmr.find(p)!=g_m_lmr.end())continue;
+				if (g_m_lmr.find(p) != g_m_lmr.end())continue;
 				g_m_lmr[p] = getLMR(a, b);
 				//保存到数据库
 				QString insertSql = "insert into agv_lmr(lmr_lastLine,lmr_nextLine,lmr_lmr) values(?,?,?);";
@@ -279,13 +286,11 @@ void MapManger::createMapFinish()
 			p.nextLine = b->id;
 
 			if (a->endStation == b->startStation && a->startStation != b->endStation) {
-				std::unique_lock<std::mutex> lckTemp(mtx_adj);
-				if (g_m_l_adj.find(a->id)!= g_m_l_adj.end()) 
+				if (g_m_l_adj.find(a->id) != g_m_l_adj.end())
 				{
 					if (std::find(g_m_l_adj[a->id].begin(), g_m_l_adj[a->id].end(), b->id) != g_m_l_adj[a->id].end()) {
 						continue;
-					}	
-					std::unique_lock<std::mutex> lckTemp2(mtx_lmr);
+					}
 					if (g_m_lmr.find(p) != g_m_lmr.end() && g_m_lmr[p] != PATH_LMF_NOWAY) {
 						g_m_l_adj[a->id].push_back(b->id);
 					}
@@ -295,7 +300,6 @@ void MapManger::createMapFinish()
 	}
 
 	//4.将adj保存到数据库
-	std::unique_lock<std::mutex> lckTemp(mtx_adj);
 	for (auto itr = g_m_l_adj.begin();itr != g_m_l_adj.end();++itr) {
 		std::list<int> lines = itr->second;
 		QString insertSql = "insert into agv_adj (adj_startLine,adj_endLine) values(?,?)";
@@ -315,74 +319,253 @@ void MapManger::createMapFinish()
 //2.从数据库中载入地图
 bool MapManger::load()
 {
+	clear();
+
+	UNIQUE_LCK lck(mtx_stations);
+	UNIQUE_LCK lck2(mtx_lines);
+	UNIQUE_LCK lck3(mtx_lmr);
+	UNIQUE_LCK lck4(mtx_adj);
+	UNIQUE_LCK lck5(mtx_reverse);
+
+	QString queryStationSql = "select id,station_x,station_y,station_name,station_rfid,station_color_r,station_color_g,station_color_b from agv_station";
+	QList<QVariant> params;
+	QList<QList<QVariant> > result = DBManager::getInstance()->query(queryStationSql, params);
+	for (int i = 0;i < result.length();++i) {
+		QList<QVariant> qsl = result.at(i);
+		if (qsl.length() != 8) {
+			QString ss = "select error!!!!!!" + queryStationSql;
+			//g_log->log(AGV_LOG_LEVEL_ERROR, ss);
+			return false;
+		}
+		AgvStation *station = new AgvStation;
+		station->id = (qsl.at(0).toInt());
+		station->x = (qsl.at(1).toDouble());
+		station->y = (qsl.at(2).toDouble());
+		station->name = (qsl.at(3).toString().toStdString());
+		station->rfid = (qsl.at(4).toInt());
+		station->color_r = (qsl.at(5).toInt());
+		station->color_g = (qsl.at(6).toInt());
+		station->color_b = (qsl.at(7).toInt());
+		g_m_stations.insert(std::make_pair(station->id, station));
+	}
+
+	//lines
+	QString squeryLineSql = "select id,line_startStation,line_endStation,line_line,line_length,line_draw,line_p1x,line_p1y,line_p2x,line_p2y,line_color_r,line_color_g,line_color_b from agv_line";
+	result = DBManager::getInstance()->query(squeryLineSql, params);
+	for (int i = 0;i < result.length();++i) {
+		QList<QVariant> qsl = result.at(i);
+		if (qsl.length() != 13) {
+			QString ss;
+			ss = "select error!!!!!!" + squeryLineSql;
+			//g_log->log(AGV_LOG_LEVEL_ERROR, ss);
+			return false;
+		}
+		if ((qsl.at(3).toBool())) {
+			//直线
+			AgvLine *line = new AgvLine;
+			line->id = (qsl.at(0).toInt());
+			line->startStation = (qsl.at(1).toInt());
+			line->endStation = (qsl.at(2).toInt());
+			line->line = (qsl.at(3).toBool());
+			line->length = (qsl.at(4).toInt());
+			line->draw = (qsl.at(5).toInt());
+			/*line->p1x = (qsl.at(6).toDouble());
+			line->p1y = (qsl.at(7).toDouble());
+			line->p2x = (qsl.at(8).toDouble());
+			line->p2y = (qsl.at(9).toDouble());*/
+			line->color_r = (qsl.at(10).toInt());
+			line->color_g = (qsl.at(11).toInt());
+			line->color_b = (qsl.at(12).toInt());
+
+			g_m_lines.insert(std::make_pair(line->id, line));
+		}
+		else {
+			//曲线
+			AgvArc *line = new AgvArc;
+			line->id = (qsl.at(0).toInt());
+			line->startStation = (qsl.at(1).toInt());
+			line->endStation = (qsl.at(2).toInt());
+			line->line = (qsl.at(3).toBool());
+			line->length = (qsl.at(4).toInt());
+			line->draw = (qsl.at(5).toInt());
+			line->p1x = (qsl.at(6).toDouble());
+			line->p1y = (qsl.at(7).toDouble());
+			line->p2x = (qsl.at(8).toDouble());
+			line->p2y = (qsl.at(9).toDouble());
+			line->color_r = (qsl.at(10).toInt());
+			line->color_g = (qsl.at(11).toInt());
+			line->color_b = (qsl.at(12).toInt());
+
+			g_m_lines.insert(std::make_pair(line->id, line));
+		}
+	}
+
+	//反方向线路
+	for (auto itr = g_m_lines.begin();itr != g_m_lines.end();++itr) {
+		for (auto pos = g_m_lines.begin();pos != g_m_lines.end();++pos) {
+			if (itr->first != pos->first
+				&& itr->second->startStation == pos->second->endStation
+				&&itr->second->endStation == pos->second->startStation) {
+				g_reverseLines[itr->first] = pos->first;
+				g_reverseLines[pos->first] = itr->first;
+			}
+		}
+	}
+
+	//lmr
+	QString queryLmrSql = "select lmr_lastLine,lmr_nextLine,lmr_lmr from agv_lmr";
+	result = DBManager::getInstance()->query(queryLmrSql, params);
+	for (int i = 0;i < result.length();++i) {
+		QList<QVariant> qsl = result.at(i);
+		if (qsl.length() != 3) {
+			QString ss = "select error!!!!!!" + queryLmrSql;
+			//g_log->log(AGV_LOG_LEVEL_ERROR, ss);
+
+			return false;
+		}
+		PATH_LEFT_MIDDLE_RIGHT ll;
+		ll.lastLine = qsl.at(0).toInt();
+		ll.nextLine = qsl.at(1).toInt();
+		g_m_lmr.insert(std::make_pair(ll, qsl.at(2).toInt()));
+	}
+
+	//adj
+	QString queryAdjSql = "select adj_startLine,adj_endLine from agv_adj";
+	result = DBManager::getInstance()->query(queryAdjSql, params);
+	for (int i = 0;i < result.length();++i)
+	{
+		QList<QVariant> qsl = result.at(i);
+		if (qsl.length() != 2) {
+			QString ss = "select error!!!!!!" + queryAdjSql;
+			//g_log->log(AGV_LOG_LEVEL_ERROR, ss);
+			return false;
+		}
+		int endLineId = qsl.at(1).toInt();
+		int startLine = qsl.at(0).toInt();
+		if (g_m_l_adj.find(startLine) != g_m_l_adj.end()) {
+			g_m_l_adj[startLine].push_back(endLineId);
+		}
+		else {
+			std::list<int> lines;
+			lines.push_back(endLineId);
+			g_m_l_adj[startLine] = lines;
+		}
+	}
 
 	return true;
 }
 
 //获取最优路径
-std::list<int> MapManger::getBestPath()
+std::list<int> MapManger::getBestPath(int agvId, int lastStation, int startStation, int endStation, int &distance, bool canChangeDirect)
 {
-	std::list<int> l;
-
-	return l;
+	distance = DISTANCE_INFINITY;
+	int disA = DISTANCE_INFINITY;
+	int disB = DISTANCE_INFINITY;
+	//先找到小车不掉头的线路
+	std::list<int> a = getPath(agvId, lastStation, startStation, endStation, disA, false);
+	std::list<int> b;
+	if (canChangeDirect) {//如果可以掉向，那么计算一下掉向的
+		b = getPath(agvId, startStation, lastStation, endStation, disB, true);
+		if (disA != DISTANCE_INFINITY && disB != DISTANCE_INFINITY) {
+			distance = disA < disB ? disA : disB;
+			if (disA < disB)return a;
+			return b;
+		}
+	}
+	if (disA != DISTANCE_INFINITY) {
+		distance = disA;
+		return a;
+	}
+	distance = disB;
+	return b;
 }
 
 //占领一个站点
 void MapManger::occuStation(int station, int occuAgv)
 {
-
+	UNIQUE_LCK lck(mtx_stations);
+	if (g_m_stations.find(station) != g_m_stations.end()) {
+		g_m_stations[station]->occuAgv = occuAgv;
+	}
 }
 
 //线路的反向占用//这辆车行驶方向和线路方向相反
 void MapManger::addOccuLine(int line, int occuAgv)
 {
-
+	UNIQUE_LCK lck(mtx_lines);
+	if (g_m_lines.find(line) != g_m_lines.end()) {
+		g_m_lines[line]->occuAgvs.push_back(occuAgv);
+	}
 }
 
 //如果车辆占领该站点，释放
 void MapManger::freeStation(int station, int occuAgv)
 {
-
+	UNIQUE_LCK lck(mtx_stations);
+	if (g_m_stations.find(station) != g_m_stations.end()) {
+		if (g_m_stations[station]->occuAgv == occuAgv)
+			g_m_stations[station]->occuAgv = 0;
+	}
 }
 
 //如果车辆在线路的占领表中，释放出去
 void MapManger::freeLine(int line, int occuAgv)
 {
-
+	UNIQUE_LCK lck(mtx_lines);
+	if (g_m_lines.find(line) != g_m_lines.end()) {
+		g_m_lines[line]->occuAgvs.remove(occuAgv);
+	}
 }
 
 //释放车辆占用的线路，除了某条线路【因为车辆停在了一条线路上】
 void MapManger::freeOtherLine(int occuAgv, int exceptLine)
 {
-
+	UNIQUE_LCK lck(mtx_lines);
+	for (auto p : g_m_lines) {
+		if (p.first == exceptLine)continue;
+		p.second->occuAgvs.remove(occuAgv);
+	}
 }
 
 //释放车辆占用的站点，除了某个站点【因为车辆站在某个站点上】
 void MapManger::freeOtherStation(int agvId, int excepetStation)
 {
-
+	UNIQUE_LCK lck(mtx_stations);
+	for (auto p : g_m_stations) {
+		if (p.first == excepetStation)continue;
+		if (p.second->occuAgv == agvId) {
+			p.second->occuAgv = 0;
+		}
+	}
 }
 
 //通过起止站点，获取线路
 int MapManger::getLineId(int startStation, int endStation)
 {
-
-
+	UNIQUE_LCK lck(mtx_lines);
+	for (auto p : g_m_lines) {
+		if (p.second->startStation == startStation && p.second->endStation == endStation)
+			return p.first;
+	}
 	return 0;
 }
 
 //通过ID获取一个站点
 AgvStation* MapManger::getAgvStation(int stationId)
 {
-
-
+	UNIQUE_LCK lck(mtx_stations);
+	for (auto p : g_m_stations) {
+		if (p.first == stationId)return p.second;
+	}
 	return NULL;
 }
 
 AgvStation* MapManger::getAgvStationByRfid(int rfid)
 {
-
-
+	UNIQUE_LCK lck(mtx_stations);
+	for (auto p : g_m_stations) {
+		if (p.second->rfid == rfid)return p.second;
+	}
 	return NULL;
 }
 
@@ -390,13 +573,19 @@ AgvStation* MapManger::getAgvStationByRfid(int rfid)
 std::list<AgvStation> MapManger::getStationList()
 {
 	std::list<AgvStation> l;
-
+	UNIQUE_LCK lck(mtx_stations);
+	for (auto p : g_m_stations) {
+		l.push_back(*(p.second));
+	}
 	return l;
 }
 
 //通过ID获取一个线路
 AgvLine* MapManger::getAgvLine(int lineId)
 {
+	UNIQUE_LCK lck(mtx_lines);
+	if (g_m_lines.find(lineId) != g_m_lines.end())
+		return g_m_lines[lineId];
 	return NULL;
 }
 
@@ -404,29 +593,71 @@ AgvLine* MapManger::getAgvLine(int lineId)
 std::list<AgvLine> MapManger::getLineList()
 {
 	std::list<AgvLine> l;
-
+	UNIQUE_LCK lck(mtx_lines);
+	for (auto p : g_m_lines) {
+		l.push_back(*(p.second));
+	}
 	return l;
 }
 
 //获取反向线路的ID
 int MapManger::getReverseLine(int lineId)
 {
-
-
+	UNIQUE_LCK lck(mtx_reverse);
+	if (g_reverseLines.find(lineId) != g_reverseLines.end())
+		return g_reverseLines[lineId];
 	return 0;
 }
 
 //获取一个线路到另一个线路的转向方向 L left M middle R right
 int MapManger::getLMR(int startLineId, int nextLineId)
 {
-
-
-	return 0;
+	
+	PATH_LEFT_MIDDLE_RIGHT p;
+	p.lastLine = startLineId;
+	p.nextLine = nextLineId;
+	UNIQUE_LCK lck(mtx_lmr);
+	if (g_m_lmr.find(p) != g_m_lmr.end())return g_m_lmr[p];
+	return PATH_LMF_NOWAY;
 }
 
 std::list<int> MapManger::getPath(int agvId, int lastPoint, int startPoint, int endPoint, int &distance, bool changeDirect)
 {
-	std::list<int> l;
+	UNIQUE_LCK lck(mtx_stations);
+	UNIQUE_LCK lck2(mtx_lines);
+	UNIQUE_LCK lck3(mtx_lmr);
+	UNIQUE_LCK lck4(mtx_adj);
+	UNIQUE_LCK lck5(mtx_reverse);
 
-	return l;
+	std::list<int> result;
+
+	distance = DISTANCE_INFINITY;
+
+	//如果上一站是未知的，例如第一次开机！
+	if (lastPoint == 0) lastPoint = startPoint;
+	if (g_m_stations.find(lastPoint) == g_m_stations.end())return result;
+	if (g_m_stations.find(startPoint) == g_m_stations.end()) return result;
+	if (g_m_stations.find(endPoint) == g_m_stations.end()) return result;
+
+	if (startPoint == endPoint) {
+		if (changeDirect && lastPoint != startPoint) {
+			if (g_m_stations[endPoint]->occuAgv != 0 && g_m_stations[endPoint]->occuAgv != agvId)
+			{
+				return result;
+			}
+			//那么返回一个结果
+			for (auto itr = g_m_lines.begin();itr != g_m_lines.end();++itr) {
+				if (itr->second->startStation == lastPoint && itr->second->endStation == startPoint) {
+					result.push_back(itr->first);
+					distance = itr->second->length;
+				}
+			}
+		}
+		else {
+			distance = 0;
+		}
+		return result;
+	}
+
+	return result;
 }

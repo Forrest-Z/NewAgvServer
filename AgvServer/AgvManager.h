@@ -40,7 +40,7 @@ public:
 	
 	void SaveAgv(int id, Agv::Pointer agv)
 	{
-		std::unique_lock<std::mutex> lck(mtx);
+		UNIQUE_LCK lck(mtx);
 		if (m_mapIdAgvs->find(id) != m_mapIdAgvs->end()) {
 			auto itr = m_mapIdAgvs->find(id);
 			if (itr != m_mapIdAgvs->end())
@@ -51,7 +51,7 @@ public:
 
 	void RemoveAgv(int id)
 	{
-		std::unique_lock<std::mutex> lck(mtx);
+		UNIQUE_LCK lck(mtx);
 		auto itr = m_mapIdAgvs->find(id);
 		if (itr != m_mapIdAgvs->end())
 			m_mapIdAgvs->erase(itr);
@@ -59,12 +59,12 @@ public:
 
 	MapIdAgvPoint getAgvs()
 	{
-		std::unique_lock<std::mutex> lck(mtx);
+		UNIQUE_LCK lck(mtx);
 		return m_mapIdAgvs;
 	}
 
 	Agv::Pointer getAgv(int id) {
-		std::unique_lock<std::mutex> lck(mtx);
+		UNIQUE_LCK lck(mtx);
 		return (*m_mapIdAgvs)[id];
 	}
 
