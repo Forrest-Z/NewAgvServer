@@ -86,8 +86,7 @@ public:
 	//获取一个线路到另一个线路的转向方向 L left M middle R right
 	int getLMR(int startLineId, int nextLineId);
 
-	std::list<int> getPath(int agvId, int lastPoint, int startPoint, int endPoint, int &distance, bool changeDirect);
-
+	
 private:
 	std::mutex mtx_stations;
 	std::map<int, AgvStation *> g_m_stations;//站点
@@ -109,5 +108,8 @@ private:
 	void clear();
 
 	int getLMR(AgvLine *lastLine, AgvLine *nextLine);
+
+	std::list<int> getPath(int agvId, int lastPoint, int startPoint, int endPoint, int &distance, bool changeDirect);
+
 };
 

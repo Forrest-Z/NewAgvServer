@@ -2,6 +2,12 @@
 #include <list>
 #include "Common.h"
 
+enum {
+	AGV_LINE_COLOR_WHITE = 0,  //未算出路径最小值
+	AGV_LINE_COLOR_GRAY,       //已经计算出一定的值，在Q队列中，但是尚未计算出最小值
+	AGV_LINE_COLOR_BLACK,      //已算出路径最小值
+};
+
 class AgvLine
 {
 public:

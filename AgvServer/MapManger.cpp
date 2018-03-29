@@ -569,7 +569,7 @@ AgvStation* MapManger::getAgvStationByRfid(int rfid)
 	return NULL;
 }
 
-//获取所有的站点
+//获取所有的站点[只用于读取列表，不可用于计算]
 std::list<AgvStation> MapManger::getStationList()
 {
 	std::list<AgvStation> l;
@@ -589,7 +589,7 @@ AgvLine* MapManger::getAgvLine(int lineId)
 	return NULL;
 }
 
-//获取所有的线路
+//获取所有的线路[只用于读取列表，不可用于计算]
 std::list<AgvLine> MapManger::getLineList()
 {
 	std::list<AgvLine> l;
@@ -612,7 +612,7 @@ int MapManger::getReverseLine(int lineId)
 //获取一个线路到另一个线路的转向方向 L left M middle R right
 int MapManger::getLMR(int startLineId, int nextLineId)
 {
-	
+
 	PATH_LEFT_MIDDLE_RIGHT p;
 	p.lastLine = startLineId;
 	p.nextLine = nextLineId;
@@ -638,13 +638,11 @@ std::list<int> MapManger::getPath(int agvId, int lastPoint, int startPoint, int 
 	if (g_m_stations.find(lastPoint) == g_m_stations.end())return result;
 	if (g_m_stations.find(startPoint) == g_m_stations.end()) return result;
 	if (g_m_stations.find(endPoint) == g_m_stations.end()) return result;
+	if (g_m_stations[endPoint]->occuAgv != 0 && g_m_stations[endPoint]->occuAgv != agvId)return result;
+	if (g_m_stations[startPoint]->occuAgv != 0 && g_m_stations[startPoint]->occuAgv != agvId)return result;
 
 	if (startPoint == endPoint) {
 		if (changeDirect && lastPoint != startPoint) {
-			if (g_m_stations[endPoint]->occuAgv != 0 && g_m_stations[endPoint]->occuAgv != agvId)
-			{
-				return result;
-			}
 			//那么返回一个结果
 			for (auto itr = g_m_lines.begin();itr != g_m_lines.end();++itr) {
 				if (itr->second->startStation == lastPoint && itr->second->endStation == startPoint) {
@@ -657,6 +655,149 @@ std::list<int> MapManger::getPath(int agvId, int lastPoint, int startPoint, int 
 			distance = 0;
 		}
 		return result;
+	}
+
+	std::multimap<int, int> Q;//key -->  distance ;value --> station;
+	//为的是让Q自动根据distance 排序，优先去考虑distance最小的
+
+	//初始化 距离、父节点、颜色
+	for (auto l : g_m_lines) {
+		l.second->father = -1;//没有父节点
+		l.second->distance = DISTANCE_INFINITY;//距离为无限远
+		l.second->color = AGV_LINE_COLOR_WHITE;//未计算距离状态
+	}
+	//初始化出发的节点
+	if (lastPoint == startPoint) {
+		//出发节点是一个站点 那么对于这个点出发的线路，他们的距离就是 线路本身的长度
+		for (auto l : g_m_lines) {
+			if (l.second->startStation == startPoint) {
+				AgvLine *reverse = g_m_lines[g_reverseLines[l.first]];
+				if (reverse->occuAgvs.size() == 0 && (g_m_stations[ l.second->endStation ]->occuAgv==0 || g_m_stations[l.second->endStation]->occuAgv == agvId)) {//反向没有车//线路终点没有车占领
+					l.second->distance = l.second->length;
+					l.second->color = AGV_LINE_COLOR_GRAY;
+					Q.insert(std::make_pair(l.second->distance, l.second->id));
+				}
+			}
+		}
+	}
+	else {
+		//出发的地方是一条线路，那么这条线路的距离是0。计算之后的所有线路的距离
+		for (auto l : g_m_lines) {
+			if (l.second->startStation == lastPoint && l.second->endStation == startPoint) {
+				AgvLine *reverse = g_m_lines[g_reverseLines[l.first]];
+				if (reverse->occuAgvs.size() == 0 && (g_m_stations[l.second->endStation]->occuAgv == 0 || g_m_stations[l.second->endStation]->occuAgv == agvId)) {//反向没有车//线路终点没有车占领
+					l.second->distance = 0;
+					l.second->color = AGV_LINE_COLOR_GRAY;
+					Q.insert(std::make_pair(l.second->distance, l.second->id));
+					break;
+				}
+			}
+		}
+	}
+
+	while (Q.size() > 0) {
+		auto front = Q.begin();
+		int startLine = front->second;
+
+		//对这条线路的 可走的下一条线路 进行distance 计算
+		if (g_m_l_adj.find(startLine) == g_m_l_adj.end()) {
+			//如果ADJ中不包含该线路，说明该线路是末端了，没有下一条线路了
+			//子节点都赋完值了，那他就黑了
+			g_m_lines[startLine]->color = AGV_LINE_COLOR_BLACK;
+			//他黑了就要把它请出Q的队列
+			for (auto ll = Q.begin();ll != Q.end();) {
+				if (ll->second == startLine) {
+					ll = Q.erase(ll);
+				}
+				else {
+					++ll;
+				}
+			}
+			continue;
+		}
+		for (auto k : g_m_l_adj[startLine]) {
+			if (g_m_lines.find(k) == g_m_lines.end()) {
+				continue;
+			}
+			AgvLine *line = g_m_lines[k];
+			if (line->color == AGV_LINE_COLOR_BLACK)continue;
+			if (line->color == AGV_LINE_COLOR_WHITE) {
+				AgvLine *reverse = g_m_lines[g_reverseLines[line->id]];
+				if (reverse->occuAgvs.size() == 0 && (g_m_stations[line->endStation]->occuAgv == 0 || g_m_stations[line->endStation]->occuAgv == agvId)) {//反向没有车//线路终点没有车占领
+					line->distance = g_m_lines[startLine]->distance + line->length;
+					line->color = AGV_LINE_COLOR_GRAY;
+					line->father = startLine;
+					Q.insert(std::make_pair(line->distance, line->id));
+				}
+			}
+			else if (line->color == AGV_LINE_COLOR_GRAY) {
+				//比较，取较小的
+				if (line->distance > g_m_lines[startLine]->distance + line->length) {
+					AgvLine *reverse = g_m_lines[g_reverseLines[line->id]];
+					if (reverse->occuAgvs.size() == 0 && (g_m_stations[line->endStation]->occuAgv == 0 || g_m_stations[line->endStation]->occuAgv == agvId)) {//反向没有车//线路终点没有车占领
+						int old_distance = line->distance;
+						//更新 距离 和 父节点
+						line->distance = g_m_lines[startLine]->distance + line->length;
+						line->father = startLine;
+						//删除该节点原来的距离
+						for (auto iiitr = Q.begin();iiitr != Q.end();) {
+							if (iiitr->second == line->id && iiitr->first == old_distance) {
+								iiitr = Q.erase(iiitr);
+							}
+						}
+						//插入该节点新的距离
+						Q.insert(std::make_pair(line->distance, line->id));
+					}
+				}
+			}
+		}
+
+		//子节点都赋完值了，那他就黑了
+		g_m_lines[startLine]->color = AGV_LINE_COLOR_BLACK;
+		//他黑了就要把它请出Q的队列
+		for (auto ll = Q.begin();ll != Q.end();) {
+			if (ll->second == startLine) {
+				ll = Q.erase(ll);
+			}
+			else {
+				++ll;
+			}
+		}
+		continue;
+	}
+
+	// 到这里，所有可达节点的距离都出来了，并且还有他们的父节点
+	//    ///到这里就算出了最小距离
+	int index = -1;
+	int minDis = DISTANCE_INFINITY;
+
+	//找到要到达的节点的距离和他的父节点
+	for (auto ll : g_m_lines) {
+		if (ll.second->endStation == endPoint) {
+			if (ll.second->distance < minDis) {
+				minDis = ll.second->distance;
+				index = ll.second->id;
+			}
+		}
+	}
+
+	//这里已经得出了到达的最小距离
+	distance = minDis;
+
+	while (true) {
+		if (index == -1)break;
+		result.push_front(index);
+		index = g_m_lines[index]->father;
+	}
+
+	//去除第一条线路(因为已经到达了)
+	if (result.size() > 0 && lastPoint != startPoint) {
+		if (!changeDirect) {
+			AgvLine * agv_line = g_m_lines[*(result.begin())];
+			if (agv_line->startStation == lastPoint && agv_line->endStation == startPoint) {
+				result.erase(result.begin());
+			}
+		}
 	}
 
 	return result;
