@@ -116,6 +116,9 @@ enum {
 	CLIENT_RETURN_MSG_ERROR_CODE_PASSWORD_ERROR,//登陆密码错误
 	CLIENT_RETURN_MSG_ERROR_CODE_NOT_LOGIN,//用户未登录
 	CLIENT_RETURN_MSG_ERROR_CODE_SAVE_SQL_FAIL,//保存数据库失败
+	CLIENT_RETURN_MSG_ERROR_CODE_TASKING,//有任务正在执行
+	CLIENT_RETURN_MSG_ERROR_CODE_NOT_CTREATING,//不是正在创建地图的时候添加 站点啊、直线、曲线
+	CLIENT_RETURN_MSG_ERROR_CODE_CTREATING,//正在创建地图的时候获取地图
 };
 
 ////////////////////////////////////////以下是特殊情况的返回结构体

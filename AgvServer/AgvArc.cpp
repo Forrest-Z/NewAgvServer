@@ -28,6 +28,23 @@ AgvArc::AgvArc(const AgvArc &b)
 	color_b = b.color_b;
 }
 
+AgvArc::AgvArc(AGV_ARC b)
+{
+	line = false;
+	p1x = b.p1x;
+	p2x = b.p2x;
+	p1y = b.p1y;
+	p2y = b.p2y;
+	id = b.id;
+	draw = b.draw;
+	length = b.length;
+	startStation = b.startStation;
+	endStation = b.endStation;
+	color_r = b.r;
+	color_g = b.g;
+	color_b = b.b;
+}
+
 AGV_ARC AgvArc::getSendData()
 {
 	AGV_ARC b;

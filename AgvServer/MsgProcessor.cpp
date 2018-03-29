@@ -4,6 +4,7 @@
 #include <boost/array.hpp>
 #include "UserManager.h"
 #include "SessionManager.h"
+#include "MapManger.h"
 
 void MsgProcess(TcpConnection::Pointer conn, Client_Request_Msg msg)
 {
@@ -23,7 +24,8 @@ void MsgProcess(TcpConnection::Pointer conn, Client_Request_Msg msg)
 
 	typedef std::function<void(TcpConnection::Pointer, Client_Request_Msg)> ProcessFunction;
 
-	UserManager::Pointer userManager = UserManager::Instance();
+	UserManager::Pointer userManager = UserManager::getInstance();
+	MapManger::Pointer mapManager = MapManger::getInstance();
 
 	static struct
 	{
@@ -39,14 +41,14 @@ void MsgProcess(TcpConnection::Pointer conn, Client_Request_Msg msg)
 		{ CLIENT_MSG_TODO_USER_ADD,std::bind(&UserManager::add,userManager,std::placeholders::_1,std::placeholders::_2) },
 		{ CLIENT_MSG_TODO_USER_MODIFY,std::bind(&UserManager::modify,userManager,std::placeholders::_1,std::placeholders::_2) },
 
-		{ CLIENT_MSG_TODO_MAP_CREATE_START,std::bind(&UserManager::login,userManager,std::placeholders::_1,std::placeholders::_2) },
-		{ CLIENT_MSG_TODO_MAP_CREATE_ADD_STATION,std::bind(&UserManager::login,userManager,std::placeholders::_1,std::placeholders::_2) },
-		{ CLIENT_MSG_TODO_MAP_CREATE_ADD_LINE,std::bind(&UserManager::login,userManager,std::placeholders::_1,std::placeholders::_2) },
-		{ CLIENT_MSG_TODO_MAP_CREATE_ADD_ARC,std::bind(&UserManager::login,userManager,std::placeholders::_1,std::placeholders::_2) },
-		{ CLIENT_MSG_TODO_MAP_CREATE_FINISH,std::bind(&UserManager::login,userManager,std::placeholders::_1,std::placeholders::_2) },
-		{ CLIENT_MSG_TODO_MAP_LIST_STATION,std::bind(&UserManager::login,userManager,std::placeholders::_1,std::placeholders::_2) },
-		{ CLIENT_MSG_TODO_MAP_LIST_LINE,std::bind(&UserManager::login,userManager,std::placeholders::_1,std::placeholders::_2) },
-		{ CLIENT_MSG_TODO_MAP_LIST_ARC,std::bind(&UserManager::login,userManager,std::placeholders::_1,std::placeholders::_2) },
+		{ CLIENT_MSG_TODO_MAP_CREATE_START,std::bind(&MapManger::interCreateStart,mapManager,std::placeholders::_1,std::placeholders::_2) },
+		{ CLIENT_MSG_TODO_MAP_CREATE_ADD_STATION,std::bind(&MapManger::interCreateAddStation,mapManager,std::placeholders::_1,std::placeholders::_2) },
+		{ CLIENT_MSG_TODO_MAP_CREATE_ADD_LINE,std::bind(&MapManger::interCreateAddLine,mapManager,std::placeholders::_1,std::placeholders::_2) },
+		{ CLIENT_MSG_TODO_MAP_CREATE_ADD_ARC,std::bind(&MapManger::interCreateAddArc,mapManager,std::placeholders::_1,std::placeholders::_2) },
+		{ CLIENT_MSG_TODO_MAP_CREATE_FINISH,std::bind(&MapManger::interCreateFinish,mapManager,std::placeholders::_1,std::placeholders::_2) },
+		{ CLIENT_MSG_TODO_MAP_LIST_STATION,std::bind(&MapManger::interListStation,mapManager,std::placeholders::_1,std::placeholders::_2) },
+		{ CLIENT_MSG_TODO_MAP_LIST_LINE,std::bind(&MapManger::interListLine,mapManager,std::placeholders::_1,std::placeholders::_2) },
+		{ CLIENT_MSG_TODO_MAP_LIST_ARC,std::bind(&MapManger::interListArc,mapManager,std::placeholders::_1,std::placeholders::_2) },
 
 		{ CLIENT_MSG_TODO_HAND_REQUEST,std::bind(&UserManager::login,userManager,std::placeholders::_1,std::placeholders::_2) },
 		{ CLIENT_MSG_TODO_HAND_RELEASE,std::bind(&UserManager::login,userManager,std::placeholders::_1,std::placeholders::_2) },

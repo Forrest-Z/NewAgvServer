@@ -13,6 +13,7 @@ class AgvLine
 public:
 	AgvLine();
 	AgvLine(const AgvLine &b);
+	AgvLine(AGV_LINE b);
 	virtual ~AgvLine();
 
 	bool operator <(const AgvLine &b) {

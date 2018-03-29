@@ -8,6 +8,7 @@ class AgvArc :
 public:
 	AgvArc();
 	AgvArc(const AgvArc &b);
+	AgvArc(AGV_ARC b);
 	virtual ~AgvArc();
 
 	AGV_ARC getSendData();

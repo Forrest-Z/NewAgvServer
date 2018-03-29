@@ -34,6 +34,19 @@ AgvLine::AgvLine(const AgvLine &b)
 	color_b = b.color_b;
 }
 
+AgvLine::AgvLine(AGV_LINE b)
+{
+	line = true;
+	id = b.id;
+	draw = b.draw;
+	length = b.length;
+	startStation = b.startStation;
+	endStation = b.endStation;
+	color_r = b.r;
+	color_g = b.g;
+	color_b = b.b;
+}
+
 AGV_LINE AgvLine::getSendData()
 {
 	AGV_LINE b;

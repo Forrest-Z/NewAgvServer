@@ -1,11 +1,13 @@
 #pragma once
 #include <string>
+#include "Common.h"
 
 class AgvStation
 {
 public:
 	AgvStation();
 	AgvStation(const AgvStation &b);
+	AgvStation(STATION_INFO b);
 	~AgvStation();
 
 	bool operator <(const AgvStation &b) {

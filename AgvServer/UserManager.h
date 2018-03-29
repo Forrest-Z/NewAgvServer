@@ -17,7 +17,7 @@ public:
 	typedef boost::unordered_map<int, USER_INFO> MapIdUser;
 	typedef boost::shared_ptr<MapIdUser> MapIdUserPointer;
 
-	static Pointer Instance()
+	static Pointer getInstance()
 	{
 		static Pointer m_inst = Pointer(new UserManager());
 		return m_inst;

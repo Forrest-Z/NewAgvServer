@@ -1,7 +1,6 @@
 #include "AgvStation.h"
 
 
-
 AgvStation::AgvStation():
 	x(0),
 	y(0),
@@ -30,4 +29,17 @@ AgvStation::AgvStation(const AgvStation &b)
 
 AgvStation::~AgvStation()
 {
+}
+
+AgvStation::AgvStation(STATION_INFO b)
+{
+	x = b.x;
+	y = b.y;
+	name = std::string(b.name);
+	id = b.id;
+	rfid = b.rfid;
+	occuAgv = 0;
+	color_r = b.r;
+	color_g = b.g;
+	color_b = b.b;
 }

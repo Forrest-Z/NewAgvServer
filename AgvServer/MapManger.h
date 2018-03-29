@@ -9,6 +9,7 @@
 #include "AgvArc.h"
 #include "AgvStation.h"
 #include <boost/noncopyable.hpp>
+#include <boost/atomic/atomic.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/smart_ptr/enable_shared_from_this.hpp>
 
@@ -25,23 +26,34 @@ public:
 		return m_inst;
 	}
 
+	//从数据库中载入地图
+	bool load();
+
+	//用户接口
+	void interCreateStart(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interCreateAddStation(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interCreateAddLine(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interCreateAddArc(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interCreateFinish(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interListStation(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interListLine(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interListArc(TcpConnection::Pointer conn, Client_Request_Msg msg);
+
+private:
 	//重置地图
 	void createMapStart();
 
 	//重置后添加站点
-	void addStation(AgvStation s);
+	bool addStation(STATION_INFO s);
 
 	//重置后添加线路[不包含反向线路]
-	void addLine(AgvLine l);
+	bool addLine(AGV_LINE l);
 
 	//重置后添加曲线[不包含反向线路]
-	void addArc(AgvArc arc);
+	bool addArc(AGV_ARC arc);
 
 	//重置完了地图//通知所有客户端地图更新,
 	void createMapFinish();
-
-	//2.从数据库中载入地图
-	bool load();
 
 	//获取最优路径
 	std::list<int> getBestPath(int agvId, int lastStation, int startStation, int endStation, int &distance, bool canChangeDirect);
@@ -72,13 +84,16 @@ public:
 
 	AgvStation* getAgvStationByRfid(int rfid);
 	//获取所有的站点
-	std::list<AgvStation> getStationList();
+	std::list<STATION_INFO> getStationList();
 
 	//通过ID获取一个线路
 	AgvLine* getAgvLine(int lineId);
 
-	//获取所有的线路
-	std::list<AgvLine> getLineList();
+	//获取所有的直线线路
+	std::list<AGV_LINE> getLineList();
+	
+	//获取所有的曲线线路
+	std::list<AGV_ARC> getArcList();
 
 	//获取反向线路的ID
 	int getReverseLine(int lineId);
@@ -87,7 +102,7 @@ public:
 	int getLMR(int startLineId, int nextLineId);
 
 	
-private:
+
 	std::mutex mtx_stations;
 	std::map<int, AgvStation *> g_m_stations;//站点
 
@@ -110,6 +125,8 @@ private:
 	int getLMR(AgvLine *lastLine, AgvLine *nextLine);
 
 	std::list<int> getPath(int agvId, int lastPoint, int startPoint, int endPoint, int &distance, bool changeDirect);
+
+	boost::atomics::atomic_bool isCreating;
 
 };
 
