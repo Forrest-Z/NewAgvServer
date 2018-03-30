@@ -777,6 +777,7 @@ int MapManger::getLineId(int startStation, int endStation)
 //通过ID获取一个站点
 AgvStation* MapManger::getAgvStation(int stationId)
 {
+	if (isCreating)return NULL;//正在创建地图的话，不可以处理这些数据
 	UNIQUE_LCK lck(mtx_stations);
 	for (auto p : g_m_stations) {
 		if (p.first == stationId)return p.second;
@@ -786,6 +787,7 @@ AgvStation* MapManger::getAgvStation(int stationId)
 
 AgvStation* MapManger::getAgvStationByRfid(int rfid)
 {
+	if (isCreating)return NULL;//正在创建地图的话，不可以处理这些数据
 	UNIQUE_LCK lck(mtx_stations);
 	for (auto p : g_m_stations) {
 		if (p.second->rfid == rfid)return p.second;
@@ -802,7 +804,7 @@ std::list<STATION_INFO> MapManger::getStationList()
 		STATION_INFO s;
 		s.x = p.second->x;
 		s.y = p.second->y;
-		sprintf(s.name,p.second->name.c_str(), p.second->name.length());
+		sprintf_s(s.name,p.second->name.c_str(), p.second->name.length(),64);
 		s.occuagv = p.second->occuAgv;
 		s.id = p.second->id;
 		s.rfid = p.second->rfid;
@@ -817,6 +819,7 @@ std::list<STATION_INFO> MapManger::getStationList()
 //通过ID获取一个线路
 AgvLine* MapManger::getAgvLine(int lineId)
 {
+	if (isCreating)return NULL;//正在创建地图的话，不可以处理这些数据
 	UNIQUE_LCK lck(mtx_lines);
 	if (g_m_lines.find(lineId) != g_m_lines.end())
 		return g_m_lines[lineId];

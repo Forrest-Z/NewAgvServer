@@ -1,10 +1,15 @@
 #pragma once
 #include <cstdint>
 #include <mutex>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
 
 #define M_PI 3.14159265358979323846
 
 #define  DISTANCE_INFINITY INT_MAX
+
+#define LOG_MSG_MAX_LENGTH		1024
 
 //用户信息结构体[登录成功时，返回一个该用户的userinfo.用户列表返回多个用户userinfo]
 typedef struct _USER_INFO
@@ -126,6 +131,22 @@ enum {
 	PATH_LMR_RIGHT = 1,
 };
 
+typedef enum {
+	AGV_LOG_LEVEL_USER_EVENT = 0,//用户操作事件
+	AGV_LOG_LEVEL_TRACE,//痕迹
+	AGV_LOG_LEVEL_DEBUG,//调试
+	AGV_LOG_LEVEL_INFO,//信息
+	AGV_LOG_LEVEL_WARN,//警告
+	AGV_LOG_LEVEL_ERROR,//错误
+	AGV_LOG_LEVEL_FATAL,//致命错误
+}AGV_LOG_LEVEL;
+
+typedef struct _Agv_Log {
+	char time[24];//yyyy-MM-dd hh:mm:ss.fff
+	int32_t level;
+	char msg[LOG_MSG_MAX_LENGTH];//日志内容
+}AGV_LOG;
+
 typedef std::unique_lock<std::mutex>  UNIQUE_LCK;
 
 unsigned char checkSum(unsigned char *data, int len);
@@ -135,3 +156,5 @@ int getInt32FromByte(char *data);
 uint16_t getInt16FromByte(char *data);
 
 uint8_t getInt8FromByte(char *data);
+
+std::string getTimeStrNow();

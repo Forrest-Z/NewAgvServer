@@ -106,7 +106,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE;Q_COMPILER_INITIALIZER_LISTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE;Q_COMPILER_INITIALIZER_LISTS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -157,6 +157,7 @@
     <ClCompile Include="AgvCmdQueue.cpp" />
     <ClCompile Include="AgvConnection.cpp" />
     <ClCompile Include="AgvLine.cpp" />
+    <ClCompile Include="AgvLogManager.cpp" />
     <ClCompile Include="AgvManager.cpp" />
     <ClCompile Include="AgvStation.cpp" />
     <ClCompile Include="Common.cpp" />
@@ -167,6 +168,7 @@
     <ClCompile Include="Server.cpp" />
     <ClCompile Include="Session.cpp" />
     <ClCompile Include="SessionManager.cpp" />
+    <ClCompile Include="TaskManager.cpp" />
     <ClCompile Include="TcpConnection.cpp" />
     <ClCompile Include="TcpServer.cpp" />
     <ClCompile Include="UserManager.cpp" />
@@ -176,6 +178,7 @@
     <ClInclude Include="AgvCmdQueue.h" />
     <ClInclude Include="AgvConnection.h" />
     <ClInclude Include="AgvLine.h" />
+    <ClInclude Include="AgvLogManager.h" />
     <ClInclude Include="AgvManager.h" />
     <ClInclude Include="AgvStation.h" />
     <ClInclude Include="Common.h" />
@@ -186,6 +189,7 @@
     <ClInclude Include="Server.h" />
     <ClInclude Include="Session.h" />
     <ClInclude Include="SessionManager.h" />
+    <ClInclude Include="TaskManager.h" />
     <ClInclude Include="TcpConnection.h" />
     <ClInclude Include="TcpServer.h" />
     <ClInclude Include="UserManager.h" />

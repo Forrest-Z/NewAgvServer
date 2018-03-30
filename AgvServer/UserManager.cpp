@@ -14,7 +14,7 @@ UserManager::~UserManager()
 {
 }
 
-void UserManager::login(TcpConnection::Pointer conn, Client_Request_Msg msg)
+void UserManager::interLogin(TcpConnection::Pointer conn, Client_Request_Msg msg)
 {
 	Client_Response_Msg response;
 	memset(&response, 0, sizeof(Client_Response_Msg));
@@ -84,7 +84,7 @@ void UserManager::login(TcpConnection::Pointer conn, Client_Request_Msg msg)
 	conn->write_all(response);
 }
 
-void UserManager::logout(TcpConnection::Pointer conn, Client_Request_Msg msg)
+void UserManager::interLogout(TcpConnection::Pointer conn, Client_Request_Msg msg)
 {
 	Client_Response_Msg response;
 	memset(&response, 0, sizeof(Client_Response_Msg));
@@ -106,7 +106,7 @@ void UserManager::logout(TcpConnection::Pointer conn, Client_Request_Msg msg)
 	conn->write_all(response);
 }
 
-void UserManager::changePassword(TcpConnection::Pointer conn, Client_Request_Msg msg)
+void UserManager::interChangePassword(TcpConnection::Pointer conn, Client_Request_Msg msg)
 {
 	Client_Response_Msg response;
 	memset(&response, 0, sizeof(Client_Response_Msg));
@@ -142,7 +142,7 @@ void UserManager::changePassword(TcpConnection::Pointer conn, Client_Request_Msg
 	conn->write_all(response);
 }
 
-void UserManager::list(TcpConnection::Pointer conn, Client_Request_Msg msg)
+void UserManager::interList(TcpConnection::Pointer conn, Client_Request_Msg msg)
 {
 	Client_Response_Msg response;
 	memset(&response, 0, sizeof(Client_Response_Msg));
@@ -189,7 +189,7 @@ void UserManager::list(TcpConnection::Pointer conn, Client_Request_Msg msg)
 		conn->write_all(response);
 }
 
-void UserManager::remove(TcpConnection::Pointer conn, Client_Request_Msg msg)
+void UserManager::interRemove(TcpConnection::Pointer conn, Client_Request_Msg msg)
 {
 	Client_Response_Msg response;
 	memset(&response, 0, sizeof(Client_Response_Msg));
@@ -222,7 +222,7 @@ void UserManager::remove(TcpConnection::Pointer conn, Client_Request_Msg msg)
 	conn->write_all(response);
 }
 
-void UserManager::add(TcpConnection::Pointer conn, Client_Request_Msg msg)
+void UserManager::interAdd(TcpConnection::Pointer conn, Client_Request_Msg msg)
 {
 	Client_Response_Msg response;
 	memset(&response, 0, sizeof(Client_Response_Msg));
@@ -255,7 +255,7 @@ void UserManager::add(TcpConnection::Pointer conn, Client_Request_Msg msg)
 	conn->write_all(response);
 }
 
-void UserManager::modify(TcpConnection::Pointer conn, Client_Request_Msg msg)
+void UserManager::interModify(TcpConnection::Pointer conn, Client_Request_Msg msg)
 {
 	Client_Response_Msg response;
 	memset(&response, 0, sizeof(Client_Response_Msg));

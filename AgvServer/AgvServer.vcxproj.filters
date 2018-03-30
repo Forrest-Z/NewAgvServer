@@ -69,6 +69,12 @@
     <ClCompile Include="Common.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="TaskManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="AgvLogManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Server.h">
@@ -120,6 +126,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="AgvStation.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="TaskManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="AgvLogManager.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

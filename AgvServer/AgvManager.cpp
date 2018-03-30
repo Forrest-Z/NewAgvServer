@@ -34,7 +34,7 @@ void AgvManager::init()
 			Agv::UpdateMRCallback _updateMR = std::bind(&AgvManager::updateStationOdometer, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
 			Agv::Pointer p(new Agv);
-			p->init(id, ip, port);
+			p->init(id, name, ip, port);
 			SaveAgv(id, p);
 		}
 	}
@@ -84,11 +84,11 @@ void AgvManager::updateOdometer(int odometer, Agv::Pointer agv)
 	//这里需要合并所有的锁，因为要计算
 	//需要如下几个因素 agvline + startstaion+ endstation
 	AgvLine *line = MapManger::getInstance()->getAgvLine(agv->currentPath.at(0));
-	if (line->id <= 0)return;
+	if (line == NULL || line->id <= 0)return;
 	AgvStation *startStation = MapManger::getInstance()->getAgvStation(line->startStation);
-	if (startStation->id <= 0)return;
+	if (startStation == NULL || startStation->id <= 0)return;
 	AgvStation *endStation = MapManger::getInstance()->getAgvStation(line->endStation);
-	if (endStation->id <= 0)return;
+	if (endStation == NULL || endStation->id <= 0)return;
 
 	if (odometer <= line->length)
 	{
@@ -143,7 +143,7 @@ void AgvManager::updateOdometer(int odometer, Agv::Pointer agv)
 void AgvManager::updateStationOdometer(int rfid, int odometer, Agv::Pointer agv)
 {
 	AgvStation *sstation = MapManger::getInstance()->getAgvStationByRfid(rfid);
-	if (sstation->id <= 0)return;
+	if (sstation == NULL || sstation->id <= 0)return;
 
 	//到达了这么个站点
 	agv->positioninfo.x = (sstation->x);
@@ -158,12 +158,15 @@ void AgvManager::updateStationOdometer(int rfid, int odometer, Agv::Pointer agv)
 	for (int i = 0;i<agv->currentPath.size();++i)
 	{
 		AgvLine *line = MapManger::getInstance()->getAgvLine(agv->currentPath.at(i));
-		if (line->id <= 0)continue;
+		if (line == NULL || line->id <= 0)continue;
 		if (line->endStation == sstation->id)
 		{
 			if (i + 1 != agv->currentPath.size())
 			{
 				AgvLine *lineNext = MapManger::getInstance()->getAgvLine(agv->currentPath.at(i + 1));
+				if (lineNext == NULL || lineNext->id < 0) {
+					continue;
+				}
 				nextStationTemp = lineNext->endStation;
 			}
 			else
@@ -225,4 +228,152 @@ std::list<Client_Response_Msg> AgvManager::getstatuss()
 	msgs.push_back(msg);
 
 	return msgs;
+}
+
+//手动控制
+void AgvManager::interHandRequest(TcpConnection::Pointer conn, Client_Request_Msg msg)
+{
+	//TODO:
+}
+void AgvManager::interHandRelease(TcpConnection::Pointer conn, Client_Request_Msg msg)
+{
+	//TODO:
+}
+void AgvManager::interHandForward(TcpConnection::Pointer conn, Client_Request_Msg msg)
+{
+	//TODO:
+}
+void AgvManager::interHandBackward(TcpConnection::Pointer conn, Client_Request_Msg msg)
+{
+	//TODO:
+}
+void AgvManager::interHandTurnLeft(TcpConnection::Pointer conn, Client_Request_Msg msg)
+{
+	//TODO:
+}
+void AgvManager::interHandTurnRight(TcpConnection::Pointer conn, Client_Request_Msg msg)
+{
+	//TODO:
+}
+
+void AgvManager::interList(TcpConnection::Pointer conn, Client_Request_Msg msg)
+{
+	Client_Response_Msg response;
+	memset(&response, 0, sizeof(Client_Response_Msg));
+	memcpy(&response.head, &msg.head, sizeof(Client_Common_Head));
+	response.head.body_length = 0;
+	response.return_head.result = CLIENT_RETURN_MSG_RESULT_SUCCESS;
+	UNIQUE_LCK lck(mtx);
+	for (auto itr = m_mapIdAgvs->begin();itr != m_mapIdAgvs->end();++itr) {
+		if (response.head.body_length + sizeof(AGV_BASE_INFO) >= CLIENT_MSG_REQUEST_BODY_MAX_SIZE) {
+			conn->write_all(response);
+			response.head.body_length = 0;
+			memset(response.body, 0, sizeof(response.body));
+		}
+		memcpy(response.body + response.head.body_length, &(itr->second->baseinfo), sizeof(AGV_BASE_INFO));
+		response.head.body_length += sizeof(AGV_BASE_INFO);
+	}
+	conn->write_all(response);
+}
+
+void AgvManager::interAdd(TcpConnection::Pointer conn, Client_Request_Msg msg)
+{
+	Client_Response_Msg response;
+	memset(&response, 0, sizeof(Client_Response_Msg));
+	memcpy(&response.head, &msg.head, sizeof(Client_Common_Head));
+	response.head.body_length = 0;
+	response.return_head.result = CLIENT_RETURN_MSG_RESULT_FAIL;
+
+	//TODO:添加到数据库，获取ID返回
+	if (msg.head.body_length != sizeof(AGV_BASE_INFO) ) {
+		response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_LENGTH;
+	}
+	else {
+		AGV_BASE_INFO baseinfo;
+		memcpy(&baseinfo, msg.body, sizeof(AGV_BASE_INFO));
+		//存库
+		QString insertSql = "insert into agv_agv(name,ip,port) values(?,?,?);SELECT @@Identity";
+		QList<QVariant> param;
+		param << QString::fromLatin1(baseinfo.name) << QString::fromLatin1(baseinfo.ip) << baseinfo.port;
+		QList<QList<QVariant> > result = DBManager::getInstance()->query(insertSql, param);
+		if (result.length() > 0 && result[0].length()>0) {
+			int id = result[0][0].toInt();
+			Agv *agv = new Agv();
+			agv->init(id, baseinfo.name,baseinfo.ip, baseinfo.port);
+			UNIQUE_LCK lck(mtx);
+			(*m_mapIdAgvs).insert(std::make_pair(agv->baseinfo.id, agv));
+			response.return_head.result = CLIENT_RETURN_MSG_RESULT_SUCCESS;
+		}
+		else {
+			response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_CODE_SAVE_SQL_FAIL;
+		}
+	}
+	conn->write_all(response);
+}
+
+void AgvManager::interDelete(TcpConnection::Pointer conn, Client_Request_Msg msg)
+{
+	Client_Response_Msg response;
+	memset(&response, 0, sizeof(Client_Response_Msg));
+	memcpy(&response.head, &msg.head, sizeof(Client_Common_Head));
+	response.head.body_length = 0;
+	response.return_head.result = CLIENT_RETURN_MSG_RESULT_FAIL;
+
+	//TODO:添加到数据库，获取ID返回
+	if (msg.head.body_length != sizeof(int)) {
+		response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_LENGTH;
+	}
+	else {
+		uint32_t id;
+		memcpy(&id, msg.body, sizeof(uint32_t));
+		//存库
+		QString insertSql = "delete from agv_agv where id=?";
+		QList<QVariant> param;
+		param << id ;
+		DBManager::getInstance()->exeSql(insertSql, param);
+		if (DBManager::getInstance()->exeSql(insertSql, param)) {
+			UNIQUE_LCK lck(mtx);
+			auto itr = (*m_mapIdAgvs).find(id);
+			if (itr != (*m_mapIdAgvs).end())
+				(*m_mapIdAgvs).erase(itr);
+			response.return_head.result = CLIENT_RETURN_MSG_RESULT_SUCCESS;
+		}
+		else {
+			response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_CODE_SAVE_SQL_FAIL;
+		}
+	}
+	conn->write_all(response);
+}
+
+void AgvManager::interModify(TcpConnection::Pointer conn, Client_Request_Msg msg)
+{
+	Client_Response_Msg response;
+	memset(&response, 0, sizeof(Client_Response_Msg));
+	memcpy(&response.head, &msg.head, sizeof(Client_Common_Head));
+	response.head.body_length = 0;
+	response.return_head.result = CLIENT_RETURN_MSG_RESULT_FAIL;
+
+	//TODO:添加到数据库，获取ID返回
+	if (msg.head.body_length != sizeof(AGV_BASE_INFO)) {
+		response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_LENGTH;
+	}
+	else {
+		AGV_BASE_INFO baseinfo;
+		memcpy(&baseinfo, msg.body, sizeof(AGV_BASE_INFO));
+		//存库
+		QString insertSql = "update agv_agv set name=?,ip=?,port=? where id = ?;";
+		QList<QVariant> param;
+		param << QString::fromLatin1(baseinfo.name) << QString::fromLatin1(baseinfo.ip) << baseinfo.port << baseinfo.id;
+		if (DBManager::getInstance()->exeSql(insertSql, param)) {
+			UNIQUE_LCK lck(mtx);
+			memcpy( (*m_mapIdAgvs)[baseinfo.id]->baseinfo.name,baseinfo.name,strlen(baseinfo.name));
+			memcpy((*m_mapIdAgvs)[baseinfo.id]->baseinfo.ip, baseinfo.ip, strlen(baseinfo.ip));
+			(*m_mapIdAgvs)[baseinfo.id]->baseinfo.port = baseinfo.port;
+			response.return_head.result = CLIENT_RETURN_MSG_RESULT_SUCCESS;
+		}
+		else {
+			response.return_head.error_code = CLIENT_RETURN_MSG_ERROR_CODE_SAVE_SQL_FAIL;
+		}
+	}
+	conn->write_all(response);
 }

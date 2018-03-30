@@ -6,6 +6,7 @@
 #include <boost/thread/executors/basic_thread_pool.hpp>
 
 #include "TcpServer.h"
+#include "Common.h"
 
 //单例模式
 class Server
@@ -24,6 +25,14 @@ public:
 	//3.开启监听
 	void initListen();
 
+	//4.初始化日志
+	bool initLog();
+
+	//4.初始化地图
+	bool initMap();
+
+	//4.初始化地图
+	bool initAgv();
 
 	void pushPackage(Client_Request_Msg package);
 
@@ -32,8 +41,9 @@ public:
 	void publisher_agv_position();
 	void publisher_agv_status();
 	void publisher_task();
-	void publisher_log();
+	void publisher_log(AGV_LOG log);
 
+	//通知，类似于广播
 	typedef enum {
 		ENUM_NOTIFY_ALL_TYPE_MAP_UPDATE = 0,
 	}ENUM_NOTIFY_ALL_TYPE;

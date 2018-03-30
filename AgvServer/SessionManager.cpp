@@ -79,31 +79,31 @@ int SessionManager::getUnloginId()
 	return --m_unlogin_id;
 }
 
-void SessionManager::addSubAgvPosition(TcpConnection::Pointer conn) {
-	removeSubAgvPosition(conn);
+void SessionManager::addSubAgvPosition(TcpConnection::Pointer conn, Client_Request_Msg msg) {
+	removeSubAgvPosition(conn,msg);
 	std::unique_lock<std::mutex> lck(m_agv_posion_mtx);
 	subs_agv_posion->push_back(conn);
 }
 
-void SessionManager::addSubAgvStatus(TcpConnection::Pointer conn) {
-	removeSubAgvStatus(conn);
+void SessionManager::addSubAgvStatus(TcpConnection::Pointer conn, Client_Request_Msg msg) {
+	removeSubAgvStatus(conn, msg);
 	std::unique_lock<std::mutex> lck(m_agv_status_mtx);
 	subs_agv_status->push_back(conn);
 }
 
-void SessionManager::addSubLog(TcpConnection::Pointer conn) {
-	removeSubLog(conn);
+void SessionManager::addSubLog(TcpConnection::Pointer conn, Client_Request_Msg msg) {
+	removeSubLog(conn, msg);
 	std::unique_lock<std::mutex> lck(m_log_mtx);
 	subs_log->push_back(conn);
 }
 
-void SessionManager::addSubTask(TcpConnection::Pointer conn) {
-	removeSubTask(conn);
+void SessionManager::addSubTask(TcpConnection::Pointer conn, Client_Request_Msg msg) {
+	removeSubTask(conn, msg);
 	std::unique_lock<std::mutex> lck(m_task_mtx);
 	subs_task->push_back(conn);
 }
 
-void SessionManager::removeSubAgvPosition(TcpConnection::Pointer conn) {
+void SessionManager::removeSubAgvPosition(TcpConnection::Pointer conn, Client_Request_Msg msg) {
 	std::unique_lock<std::mutex> lck(m_agv_posion_mtx);
 	for (auto itr = subs_agv_posion->begin();itr != subs_agv_posion->end();)
 	{
@@ -114,7 +114,7 @@ void SessionManager::removeSubAgvPosition(TcpConnection::Pointer conn) {
 	}
 }
 
-void SessionManager::removeSubAgvStatus(TcpConnection::Pointer conn) {
+void SessionManager::removeSubAgvStatus(TcpConnection::Pointer conn, Client_Request_Msg msg) {
 	std::unique_lock<std::mutex> lck(m_agv_status_mtx);
 	for (auto itr = subs_agv_status->begin();itr != subs_agv_status->end();)
 	{
@@ -125,7 +125,7 @@ void SessionManager::removeSubAgvStatus(TcpConnection::Pointer conn) {
 	}
 }
 
-void SessionManager::removeSubLog(TcpConnection::Pointer conn) {
+void SessionManager::removeSubLog(TcpConnection::Pointer conn, Client_Request_Msg msg) {
 	std::unique_lock<std::mutex> lck(m_log_mtx);
 	for (auto itr = subs_log->begin();itr != subs_log->end();)
 	{
@@ -136,7 +136,7 @@ void SessionManager::removeSubLog(TcpConnection::Pointer conn) {
 	}
 }
 
-void SessionManager::removeSubTask(TcpConnection::Pointer conn) {
+void SessionManager::removeSubTask(TcpConnection::Pointer conn, Client_Request_Msg msg) {
 	std::unique_lock<std::mutex> lck(m_task_mtx);
 	for (auto itr = subs_task->begin();itr != subs_task->end();)
 	{
@@ -173,5 +173,12 @@ void SessionManager::subTaskForeach(SubCallback cb)
 	std::unique_lock<std::mutex> lck(m_task_mtx);
 	for (auto itr = subs_task->begin();itr != subs_task->end();++itr) {
 		cb(*itr);
+	}
+}
+void SessionManager::notifyForeach(SubCallback cb)
+{
+	std::unique_lock<std::mutex> lck(m_sessionmtx);
+	for (auto itr = m_sessions->begin();itr != m_sessions->end();++itr) {
+		cb(itr->first);
 	}
 }

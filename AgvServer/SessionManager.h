@@ -48,27 +48,29 @@ public:
 
 	int getUnloginId();
 
-	void addSubAgvPosition(TcpConnection::Pointer conn);
+	void addSubAgvPosition(TcpConnection::Pointer conn, Client_Request_Msg msg);
 
-	void addSubAgvStatus(TcpConnection::Pointer conn);
+	void addSubAgvStatus(TcpConnection::Pointer conn, Client_Request_Msg msg);
 
-	void addSubLog(TcpConnection::Pointer conn);
+	void addSubLog(TcpConnection::Pointer conn, Client_Request_Msg msg);
 
-	void addSubTask(TcpConnection::Pointer conn);
+	void addSubTask(TcpConnection::Pointer conn, Client_Request_Msg msg);
 
-	void removeSubAgvPosition(TcpConnection::Pointer conn);
+	void removeSubAgvPosition(TcpConnection::Pointer conn, Client_Request_Msg msg);
 
-	void removeSubAgvStatus(TcpConnection::Pointer conn);
+	void removeSubAgvStatus(TcpConnection::Pointer conn, Client_Request_Msg msg);
 
-	void removeSubLog(TcpConnection::Pointer conn);
+	void removeSubLog(TcpConnection::Pointer conn, Client_Request_Msg msg);
 
-	void removeSubTask(TcpConnection::Pointer conn);
+	void removeSubTask(TcpConnection::Pointer conn, Client_Request_Msg msg);
 
 	//执行遍历回调
 	void subAgvPositionForeach(SubCallback cb);
 	void subAgvStatusForeach(SubCallback cb);
 	void subLogForeach(SubCallback cb);
 	void subTaskForeach(SubCallback cb);
+
+	void notifyForeach(SubCallback cb);
 
 private:
 	SessionManager();

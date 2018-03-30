@@ -38,19 +38,19 @@ public:
 		return m_idUsers;
 	}
 
-	void login(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interLogin(TcpConnection::Pointer conn, Client_Request_Msg msg);
 
-	void logout(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interLogout(TcpConnection::Pointer conn, Client_Request_Msg msg);
 
-	void changePassword(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interChangePassword(TcpConnection::Pointer conn, Client_Request_Msg msg);
 
-	void list(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interList(TcpConnection::Pointer conn, Client_Request_Msg msg);
 
-	void remove(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interRemove(TcpConnection::Pointer conn, Client_Request_Msg msg);
 
-	void add(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interAdd(TcpConnection::Pointer conn, Client_Request_Msg msg);
 
-	void modify(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interModify(TcpConnection::Pointer conn, Client_Request_Msg msg);
 
 	virtual ~UserManager();
 private:

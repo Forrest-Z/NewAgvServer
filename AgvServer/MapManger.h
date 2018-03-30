@@ -8,6 +8,8 @@
 #include "AgvLine.h"
 #include "AgvArc.h"
 #include "AgvStation.h"
+#include "TcpConnection.h"
+#include "Protocol.h"
 #include <boost/noncopyable.hpp>
 #include <boost/atomic/atomic.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
@@ -39,6 +41,14 @@ public:
 	void interListLine(TcpConnection::Pointer conn, Client_Request_Msg msg);
 	void interListArc(TcpConnection::Pointer conn, Client_Request_Msg msg);
 
+	//通过一个rfid获取站点
+	AgvStation* getAgvStationByRfid(int rfid);
+
+	//通过ID获取一个站点
+	AgvStation* getAgvStation(int stationId);
+
+	//通过ID获取一个线路
+	AgvLine* getAgvLine(int lineId);
 private:
 	//重置地图
 	void createMapStart();
@@ -79,15 +89,8 @@ private:
 	//通过起止站点，获取线路
 	int getLineId(int startStation, int endStation);
 
-	//通过ID获取一个站点
-	AgvStation* getAgvStation(int stationId);
-
-	AgvStation* getAgvStationByRfid(int rfid);
 	//获取所有的站点
 	std::list<STATION_INFO> getStationList();
-
-	//通过ID获取一个线路
-	AgvLine* getAgvLine(int lineId);
 
 	//获取所有的直线线路
 	std::list<AGV_LINE> getLineList();
@@ -100,8 +103,6 @@ private:
 
 	//获取一个线路到另一个线路的转向方向 L left M middle R right
 	int getLMR(int startLineId, int nextLineId);
-
-	
 
 	std::mutex mtx_stations;
 	std::map<int, AgvStation *> g_m_stations;//站点

@@ -1,4 +1,5 @@
 #include "Common.h"
+#include <ctime>
 
 unsigned char checkSum(unsigned char *data, int len)
 {
@@ -31,4 +32,22 @@ uint16_t getInt16FromByte(char *data)
 uint8_t getInt8FromByte(char *data)
 {
 	return (uint8_t)(data[0]);
+}
+
+std::string getTimeStrNow()
+{
+	using std::chrono::system_clock;
+
+	//获取当前时间
+	auto time_now = std::chrono::system_clock::now();
+	//计算当前时间的 毫秒数 %1000;
+	int ms = std::chrono::duration_cast<std::chrono::milliseconds>(time_now.time_since_epoch()).count()%1000;
+
+	std::time_t tt = std::chrono::system_clock::to_time_t(time_now);
+
+	std::stringstream ss;
+	
+	ss << std::put_time(std::localtime(&tt), "%Y-%m-%d %H:%M:%S") << "." << ms;
+
+	return ss.str();
 }

@@ -49,11 +49,12 @@ void Agv::onSend(const char *data, int len)
 	}
 }
 
-bool Agv::init(int _id,std::string _ip, int _port, TaskFinishCallback _taskFinish, TaskErrorCallback _taskError, TaskInteruptCallback _taskInteruput, UpdateMCallback _updateM, UpdateMRCallback _updateMR)
+bool Agv::init(int _id, std::string name, std::string _ip, int _port, TaskFinishCallback _taskFinish, TaskErrorCallback _taskError, TaskInteruptCallback _taskInteruput, UpdateMCallback _updateM, UpdateMRCallback _updateMR)
 {
 	baseinfo.id = _id;
 	sprintf_s(baseinfo.ip, _ip.c_str(), _ip.length(), 64);
 	baseinfo.port = _port;
+	sprintf_s(baseinfo.name, name.c_str(), name.length(), 64);
 	taskFinish = _taskFinish;
 	taskError = _taskError;
 	taskInteruput = _taskInteruput;

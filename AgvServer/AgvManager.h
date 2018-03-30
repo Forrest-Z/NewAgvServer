@@ -8,6 +8,7 @@
 
 #include "Agv.h"
 #include "Protocol.h"
+#include "TcpConnection.h"
 
 class AgvManager :private boost::noncopyable, public boost::enable_shared_from_this<AgvManager>
 {
@@ -27,6 +28,18 @@ public:
 		static Pointer m_inst = Pointer(new AgvManager());
 		return m_inst;
 	}
+
+	void interHandRequest(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interHandRelease(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interHandForward(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interHandBackward(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interHandTurnLeft(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interHandTurnRight(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interList(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interAdd(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interDelete(TcpConnection::Pointer conn, Client_Request_Msg msg);
+	void interModify(TcpConnection::Pointer conn, Client_Request_Msg msg);
+
 
 	void onFinish(Agv::Pointer agv);
 
@@ -57,7 +70,7 @@ public:
 			m_mapIdAgvs->erase(itr);
 	}
 
-	MapIdAgvPoint getAgvs()
+	/*MapIdAgvPoint getAgvs()
 	{
 		UNIQUE_LCK lck(mtx);
 		return m_mapIdAgvs;
@@ -66,7 +79,7 @@ public:
 	Agv::Pointer getAgv(int id) {
 		UNIQUE_LCK lck(mtx);
 		return (*m_mapIdAgvs)[id];
-	}
+	}*/
 
 	std::list<Client_Response_Msg> getPositions();
 

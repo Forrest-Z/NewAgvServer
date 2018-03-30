@@ -32,7 +32,7 @@ public:
 	Agv();
 	virtual ~Agv();
 
-	bool init(int _id,std::string _ip, int _port, TaskFinishCallback _taskFinish = nullptr, TaskErrorCallback _taskError = nullptr, TaskInteruptCallback _taskInteruput = nullptr, UpdateMCallback _updateM = nullptr, UpdateMRCallback _updateMR = nullptr);
+	bool init(int _id,std::string name, std::string _ip, int _port, TaskFinishCallback _taskFinish = nullptr, TaskErrorCallback _taskError = nullptr, TaskInteruptCallback _taskInteruput = nullptr, UpdateMCallback _updateM = nullptr, UpdateMRCallback _updateMR = nullptr);
 
 	//开始任务
 	void startTask(std::vector<AgvOrder> &ord);
