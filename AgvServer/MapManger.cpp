@@ -5,7 +5,7 @@
 #include "Common.h"
 #include "Server.h"
 
-MapManger::MapManger():isCreating(false)
+MapManger::MapManger() :isCreating(false)
 {
 }
 
@@ -29,8 +29,7 @@ bool MapManger::load()
 	QString queryStationSql = "select id,station_x,station_y,station_name,station_rfid,station_color_r,station_color_g,station_color_b from agv_station";
 	QList<QVariant> params;
 	QList<QList<QVariant> > result = DBManager::getInstance()->query(queryStationSql, params);
-	for (int i = 0;i < result.length();++i) {
-		QList<QVariant> qsl = result.at(i);
+	for (auto qsl : result) {
 		if (qsl.length() != 8) {
 			QString ss = "select error!!!!!!" + queryStationSql;
 			//g_log->log(AGV_LOG_LEVEL_ERROR, ss);
@@ -203,7 +202,7 @@ void MapManger::interCreateAddStation(TcpConnection::Pointer conn, Client_Reques
 			}
 			response.return_head.result = CLIENT_RETURN_MSG_RESULT_SUCCESS;
 		}
-		
+
 	}
 	conn->write_all(response);
 }
@@ -239,7 +238,7 @@ void MapManger::interCreateAddLine(TcpConnection::Pointer conn, Client_Request_M
 	conn->write_all(response);
 }
 
-void MapManger::interCreateAddArc(TcpConnection::Pointer conn, Client_Request_Msg msg) 
+void MapManger::interCreateAddArc(TcpConnection::Pointer conn, Client_Request_Msg msg)
 {
 	Client_Response_Msg response;
 	memset(&response, 0, sizeof(Client_Response_Msg));
@@ -315,7 +314,7 @@ void MapManger::interListStation(TcpConnection::Pointer conn, Client_Request_Msg
 			}
 			memcpy(response.body + response.head.body_length, &s, sizeof(STATION_INFO));
 			response.head.body_length += sizeof(STATION_INFO);
-		}		
+		}
 	}
 	conn->write_all(response);
 }
@@ -677,7 +676,7 @@ void MapManger::createMapFinish()
 		}
 	}
 
-	isCreating = false;	
+	isCreating = false;
 }
 
 //获取最优路径
@@ -804,7 +803,7 @@ std::list<STATION_INFO> MapManger::getStationList()
 		STATION_INFO s;
 		s.x = p.second->x;
 		s.y = p.second->y;
-		sprintf_s(s.name,p.second->name.c_str(), p.second->name.length(),64);
+		sprintf_s(s.name, p.second->name.c_str(), p.second->name.length(), 64);
 		s.occuagv = p.second->occuAgv;
 		s.id = p.second->id;
 		s.rfid = p.second->rfid;
@@ -823,6 +822,16 @@ AgvLine* MapManger::getAgvLine(int lineId)
 	UNIQUE_LCK lck(mtx_lines);
 	if (g_m_lines.find(lineId) != g_m_lines.end())
 		return g_m_lines[lineId];
+	return NULL;
+}
+
+AgvLine* MapManger::getAgvLine(int lastStation, int nextStation)
+{
+	if (isCreating)return NULL;//正在创建地图的话，不可以处理这些数据
+	UNIQUE_LCK lck(mtx_lines);
+	for (auto p : g_m_lines) {
+		if (p.second->startStation == lastStation && p.second->endStation == nextStation)return p.second;
+	}
 	return NULL;
 }
 
@@ -891,6 +900,7 @@ int MapManger::getLMR(int startLineId, int nextLineId)
 	return PATH_LMF_NOWAY;
 }
 
+
 std::list<int> MapManger::getPath(int agvId, int lastPoint, int startPoint, int endPoint, int &distance, bool changeDirect)
 {
 	UNIQUE_LCK lck(mtx_stations);
@@ -933,11 +943,41 @@ std::list<int> MapManger::getPath(int agvId, int lastPoint, int startPoint, int 
 		l.second->color = AGV_LINE_COLOR_WHITE;
 	}
 
+	//增加一种通行的判定：
+	//同事AGV2 要从 C点 到达 D点，同事路过B点。
+	//如果AGV1 要从 A点 到达 B点。如果AGV1先到达B点，会导致AGV2 无法继续运行。
+	//判定终点的线路 是否占用
+	//endPoint是终点，lastPoint是到达endPoint的上一站。
+	{
+		std::list<int> lines = g_m_l_adj[endPoint];
+		for (auto l : lines) 
+		{
+			if (g_m_lines.find(l) == g_m_lines.end())continue;
+			AgvLine *line = g_m_lines[l];
+
+			if (line->startStation == endPoint && line->endStation == lastPoint) 
+			{
+				continue;
+			}
+
+			if (line->occuAgvs.size() > 1 || (line->occuAgvs.size() == 1 && (*(line->occuAgvs.begin())) != agvId)) {
+				//TODO:该方式到达这个地方 不可行.该线路 置黑、
+				if (g_reverseLines.find(l) == g_reverseLines.end())continue;
+				int llid = g_reverseLines[l];
+				if (g_m_lines.find(llid) == g_m_lines.end())continue;
+				g_m_lines[llid]->color = AGV_LINE_COLOR_BLACK;
+				g_m_lines[llid]->distance = DISTANCE_INFINITY;
+			}
+		}
+	}
+
+
 	if (lastPoint == startPoint) {
 		for (auto l : g_m_lines) {
 			if (l.second->startStation == startPoint) {
 				AgvLine *reverse = g_m_lines[g_reverseLines[l.first]];
-				if (reverse->occuAgvs.size() == 0 && (g_m_stations[ l.second->endStation ]->occuAgv==0 || g_m_stations[l.second->endStation]->occuAgv == agvId)) {
+				if (reverse->occuAgvs.size() == 0 && (g_m_stations[l.second->endStation]->occuAgv == 0 || g_m_stations[l.second->endStation]->occuAgv == agvId)) {
+					if (l.second->color == AGV_LINE_COLOR_BLACK)continue;
 					l.second->distance = l.second->length;
 					l.second->color = AGV_LINE_COLOR_GRAY;
 					Q.insert(std::make_pair(l.second->distance, l.second->id));
@@ -950,6 +990,7 @@ std::list<int> MapManger::getPath(int agvId, int lastPoint, int startPoint, int 
 			if (l.second->startStation == lastPoint && l.second->endStation == startPoint) {
 				AgvLine *reverse = g_m_lines[g_reverseLines[l.first]];
 				if (reverse->occuAgvs.size() == 0 && (g_m_stations[l.second->endStation]->occuAgv == 0 || g_m_stations[l.second->endStation]->occuAgv == agvId)) {
+					if (l.second->color == AGV_LINE_COLOR_BLACK)continue;
 					l.second->distance = 0;
 					l.second->color = AGV_LINE_COLOR_GRAY;
 					Q.insert(std::make_pair(l.second->distance, l.second->id));

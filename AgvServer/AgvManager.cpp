@@ -19,8 +19,7 @@ void AgvManager::init()
 	QList<QVariant> params;
 	QList<QList<QVariant> > result = DBManager::getInstance()->query(querySql, params);
 
-	for (int i = 0;i < result.length();++i) {
-		QList<QVariant> qsl = result.at(i);
+	for (auto qsl : result) {
 		if (qsl.length() == 4) {
 			int id = (qsl.at(0).toInt());
 			std::string name = (qsl.at(1).toString().toStdString());
@@ -65,6 +64,13 @@ void AgvManager::updateOdometer(int odometer, Agv::Pointer agv)
 	//正在移动中，不再原来的站点的位置了
 	if (agv->nowStation > 0 && agv->nextStation > 0)
 	{
+		//释放站点的占用
+		MapManger::getInstance()->freeStation(agv->nowStation, agv->baseinfo.id);
+		//添加对线路的占用
+		AgvLine *line = MapManger::getInstance()->getAgvLine(agv->nowStation, agv->nextStation);
+		if (line != NULL)
+			MapManger::getInstance()->addOccuLine(line->id,agv->baseinfo.id);
+
 		//如果之前在一个站点，现在相当于离开了那个站点
 		agv->lastStation = agv->nowStation;
 		agv->nowStation = 0;
@@ -83,7 +89,7 @@ void AgvManager::updateOdometer(int odometer, Agv::Pointer agv)
 
 	//这里需要合并所有的锁，因为要计算
 	//需要如下几个因素 agvline + startstaion+ endstation
-	AgvLine *line = MapManger::getInstance()->getAgvLine(agv->currentPath.at(0));
+	AgvLine *line = MapManger::getInstance()->getAgvLine(agv->currentPath.front());
 	if (line == NULL || line->id <= 0)return;
 	AgvStation *startStation = MapManger::getInstance()->getAgvStation(line->startStation);
 	if (startStation == NULL || startStation->id <= 0)return;
@@ -150,28 +156,38 @@ void AgvManager::updateStationOdometer(int rfid, int odometer, Agv::Pointer agv)
 	agv->positioninfo.y = (sstation->y);
 
 	//设置当前站点
+	if (agv->nowStation == 0) {
+		//释放线路的占用，
+		AgvLine *line = MapManger::getInstance()->getAgvLine(agv->nowStation, agv->nextStation);
+		if (line != NULL)
+			MapManger::getInstance()->freeLine(line->id, agv->baseinfo.id);
+		//设置对站点的占用
+		MapManger::getInstance()->occuStation(agv->nowStation, agv->baseinfo.id);
+	}
+
 	agv->nowStation = sstation->id;
 	agv->lastStationOdometer = odometer;
 
 	//获取path中的下一站
 	int nextStationTemp = 0;
-	for (int i = 0;i<agv->currentPath.size();++i)
+	for (auto itr = agv->currentPath.begin();itr!= agv->currentPath.end();++itr)
 	{
-		AgvLine *line = MapManger::getInstance()->getAgvLine(agv->currentPath.at(i));
+		AgvLine *line = MapManger::getInstance()->getAgvLine(*itr);
 		if (line == NULL || line->id <= 0)continue;
 		if (line->endStation == sstation->id)
 		{
-			if (i + 1 != agv->currentPath.size())
-			{
-				AgvLine *lineNext = MapManger::getInstance()->getAgvLine(agv->currentPath.at(i + 1));
+			if (++itr == agv->currentPath.end()) {
+				AgvLine *lineNext = MapManger::getInstance()->getAgvLine(*itr);
 				if (lineNext == NULL || lineNext->id < 0) {
-					continue;
+					nextStationTemp = 0;
+					break;
 				}
 				nextStationTemp = lineNext->endStation;
 			}
-			else
+			else {
 				nextStationTemp = 0;
-			break;
+			}
+			break;			
 		}
 	}
 	agv->nextStation = nextStationTemp;
@@ -376,4 +392,64 @@ void AgvManager::interModify(TcpConnection::Pointer conn, Client_Request_Msg msg
 		}
 	}
 	conn->write_all(response);
+}
+
+void AgvManager::agvForeach(AgvEachCallback cb)
+{
+	std::unique_lock<std::mutex> lck(mtx);
+	for (auto itr = m_mapIdAgvs->begin();itr != m_mapIdAgvs->end();++itr) {
+		cb(itr->second);
+	}
+}
+
+
+bool AgvManager::agvStartTask(int agvId, std::list<int> path)
+{
+	std::unique_lock<std::mutex> lck(mtx);
+	if (m_mapIdAgvs->find(agvId) == m_mapIdAgvs->end())return false;
+	if (path.empty())return false;
+	Agv::Pointer agv = (*m_mapIdAgvs)[agvId];
+
+	//TODO:这里需要启动小车，告诉小车下一站和下几站，还有就是左中右信息(回头再说左中右)
+	agv->currentPath = (path);
+	MapManger::Pointer mapManager = MapManger::getInstance();
+	//获取小车在这之前的线路
+	int agvLastLine = 0;
+	if (agv->nowStation == 0 && agv->lastStation != 0) {
+		AgvLine * line = mapManager->getAgvLine(agv->lastStation, agv->nowStation);
+		if(line!=NULL) agvLastLine = line->id;
+	}
+	else if (agv->lastStation != 0 && agv->nextStation != 0) {
+		AgvLine * line = mapManager->getAgvLine(agv->lastStation, agv->nextStation);
+		if (line != NULL) agvLastLine = line->id;
+	}
+
+	//获取path中的下一站
+	if (agv->nowStation != mapManager->getAgvLine(agv->currentPath.front())->startStation) {
+		agv->nextStation = mapManager->getAgvLine(agv->currentPath.front())->startStation;
+	}
+	else {
+		agv->nextStation = mapManager->getAgvLine(agv->currentPath.front())->endStation;
+	}
+
+	//现在开始让小车执行长队列
+	std::vector<AgvOrder> orders;
+	for (auto itr = path.begin();itr != path.end();) {
+		AgvOrder order;
+		int thisLine = *itr;
+		order.rfid = mapManager->getAgvStation(mapManager->getAgvLine(thisLine)->endStation)->rfid;
+		int lmr = mapManager->getLMR(agvLastLine, thisLine);
+		agvLastLine = thisLine;
+		//根本没有这个左中右的接口！！！！！ 白忙活
+		/*if (lmr == PATH_LMR_LEFT) {
+			order.order = AgvOrder::ORDER_FORWARD;
+			order.param = 5;
+		}*/
+
+		order.order = AgvOrder::ORDER_FORWARD;
+		order.param = 5;
+		orders.push_back(order);
+	}
+	
+	agv->startTask(orders);
 }

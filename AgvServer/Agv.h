@@ -3,6 +3,7 @@
 #include "AgvConnection.h"
 #include "AgvCmdQueue.h"
 #include "Common.h"
+#include <list>
 
 class Agv : public boost::enable_shared_from_this<Agv>
 {
@@ -86,7 +87,7 @@ public:
 	int status = AGV_STATUS_IDLE;
 	
 	//当前路径
-	std::vector<int> currentPath;
+	std::list<int> currentPath;
 	//正在执行任务的ID
 	int currentTaskId = 0;
 	

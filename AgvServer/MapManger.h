@@ -31,6 +31,25 @@ public:
 	//从数据库中载入地图
 	bool load();
 
+	//占领一个站点
+	void occuStation(int station, int occuAgv);
+
+	//线路的反向占用//这辆车行驶方向和线路方向相反
+	void addOccuLine(int line, int occuAgv);
+
+	//如果车辆占领该站点，释放
+	void freeStation(int station, int occuAgv);
+
+	//如果车辆在线路的占领表中，释放出去
+	void freeLine(int line, int occuAgv);
+
+	//释放车辆占用的线路，除了某条线路【因为车辆停在了一条线路上】
+	void freeOtherLine(int occuAgv, int exceptLine = 0);
+
+	//释放车辆占用的站点，除了某个站点【因为车辆站在某个站点上】
+	void freeOtherStation(int agvId, int excepetStation = 0);
+
+
 	//用户接口
 	void interCreateStart(TcpConnection::Pointer conn, Client_Request_Msg msg);
 	void interCreateAddStation(TcpConnection::Pointer conn, Client_Request_Msg msg);
@@ -49,6 +68,18 @@ public:
 
 	//通过ID获取一个线路
 	AgvLine* getAgvLine(int lineId);
+
+	//通过起止站点获取一个线路
+	AgvLine* getAgvLine(int lastStation,int nextStation);
+
+	//获取最优路径
+	std::list<int> getBestPath(int agvId, int lastStation, int startStation, int endStation, int &distance, bool canChangeDirect);
+
+	//获取反向线路的ID
+	int getReverseLine(int lineId);
+
+	//获取一个线路到另一个线路的转向方向 L left M middle R right
+	int getLMR(int startLineId, int nextLineId);
 private:
 	//重置地图
 	void createMapStart();
@@ -65,27 +96,6 @@ private:
 	//重置完了地图//通知所有客户端地图更新,
 	void createMapFinish();
 
-	//获取最优路径
-	std::list<int> getBestPath(int agvId, int lastStation, int startStation, int endStation, int &distance, bool canChangeDirect);
-
-	//占领一个站点
-	void occuStation(int station, int occuAgv);
-
-	//线路的反向占用//这辆车行驶方向和线路方向相反
-	void addOccuLine(int line,int occuAgv);
-
-	//如果车辆占领该站点，释放
-	void freeStation(int station, int occuAgv);
-
-	//如果车辆在线路的占领表中，释放出去
-	void freeLine(int line, int occuAgv);
-
-	//释放车辆占用的线路，除了某条线路【因为车辆停在了一条线路上】
-	void freeOtherLine( int occuAgv,int exceptLine = 0 );
-
-	//释放车辆占用的站点，除了某个站点【因为车辆站在某个站点上】
-	void freeOtherStation(int agvId, int excepetStation = 0);
-
 	//通过起止站点，获取线路
 	int getLineId(int startStation, int endStation);
 
@@ -98,11 +108,6 @@ private:
 	//获取所有的曲线线路
 	std::list<AGV_ARC> getArcList();
 
-	//获取反向线路的ID
-	int getReverseLine(int lineId);
-
-	//获取一个线路到另一个线路的转向方向 L left M middle R right
-	int getLMR(int startLineId, int nextLineId);
 
 	std::mutex mtx_stations;
 	std::map<int, AgvStation *> g_m_stations;//站点
@@ -128,6 +133,6 @@ private:
 	std::list<int> getPath(int agvId, int lastPoint, int startPoint, int endPoint, int &distance, bool changeDirect);
 
 	boost::atomics::atomic_bool isCreating;
-
+	
 };
 

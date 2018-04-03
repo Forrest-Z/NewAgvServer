@@ -13,6 +13,9 @@
 class AgvManager :private boost::noncopyable, public boost::enable_shared_from_this<AgvManager>
 {
 public:
+
+	typedef std::function< void(Agv::Pointer) >  AgvEachCallback;
+
 	typedef boost::shared_ptr<AgvManager> Pointer;
 
 	//Í¨¹ýID£¬²éÕÒAGV
@@ -70,21 +73,22 @@ public:
 			m_mapIdAgvs->erase(itr);
 	}
 
-	/*MapIdAgvPoint getAgvs()
-	{
-		UNIQUE_LCK lck(mtx);
-		return m_mapIdAgvs;
-	}
-
 	Agv::Pointer getAgv(int id) {
 		UNIQUE_LCK lck(mtx);
-		return (*m_mapIdAgvs)[id];
-	}*/
+		if (m_mapIdAgvs->find(id) != m_mapIdAgvs->end()) {
+			return (*m_mapIdAgvs)[id];
+		}
+		return Agv::Pointer();
+	}
 
 	std::list<Client_Response_Msg> getPositions();
 
 	std::list<Client_Response_Msg> getstatuss();
 
+	void agvForeach(AgvEachCallback cb);
+
+	bool agvStartTask(int agvId, std::list<int> path);
+	
 private:
 	AgvManager();
 

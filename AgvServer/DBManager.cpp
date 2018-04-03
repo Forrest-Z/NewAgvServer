@@ -218,8 +218,8 @@ bool DBManager::exeSql(QString esql, QList<QVariant> args)
 	mutex.lock();
 	QSqlQuery sql_query(database);
 	sql_query.prepare(esql);
-	for (int i = 0;i<args.length();++i) {
-		sql_query.addBindValue(args[i]);
+	for (auto arg : args) {
+		sql_query.addBindValue(arg);
 	}
 
 	if (!sql_query.exec())
@@ -244,8 +244,8 @@ QList<QList<QVariant> > DBManager::query(QString qeurysql, QList<QVariant> args)
 		mutex.lock();
 		QSqlQuery sql_insert(database);
 		sql_insert.prepare(insertSql);
-		for (int i = 0;i<args.length();++i) {
-			sql_insert.addBindValue(args[i]);
+		for (auto arg: args) {
+			sql_insert.addBindValue(arg);
 		}
 
 		if (!sql_insert.exec())
@@ -277,8 +277,8 @@ QList<QList<QVariant> > DBManager::query(QString qeurysql, QList<QVariant> args)
 		mutex.lock();
 		QSqlQuery sql_query(database);
 		sql_query.prepare(qeurysql);
-		for (int i = 0;i<args.length();++i) {
-			sql_query.addBindValue(args[i]);
+		for (auto arg:args) {
+			sql_query.addBindValue(arg);
 		}
 		if (!sql_query.exec())
 		{

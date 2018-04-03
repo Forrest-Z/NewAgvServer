@@ -106,6 +106,16 @@ typedef struct _AGV_ARC
 	double p2y;
 }AGV_ARC;
 
+typedef struct _TASK_INFO
+{
+	int32_t id;
+	char produceTime[24];
+	char doTime[24];
+	char doneTime[24];
+	int32_t excuteAgv;
+	int32_t status;
+}TASK_INFO;
+
 typedef struct _PATH_LEFT_MIDDLE_RIGHT {
 	int lastLine;
 	int nextLine;
